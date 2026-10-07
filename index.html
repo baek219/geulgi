@@ -185,7 +185,12 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
 .sheet p { margin: 0; color: var(--muted); line-height: 1.55; }
 .cam { position: relative; width: 100%; aspect-ratio: 1; border-radius: 14px; overflow: hidden; background: #000; }
 .cam video { width: 100%; height: 100%; object-fit: cover; display: block; }
-.cam .frame { position: absolute; inset: 18%; border: 3px solid #fff; border-radius: 14px; box-shadow: 0 0 0 999px rgba(0,0,0,.35); }
+.cam .frame { position: absolute; inset: 12%; border: 4px solid #E5484D; border-radius: 16px; box-shadow: 0 0 0 999px rgba(0,0,0,.35); transition: border-color .25s; }
+.cam .hint { position: absolute; left: 0; right: 0; bottom: 10px; text-align: center; color: #fff; font-size: 15px; font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+.cam .meter { position: absolute; left: 12%; right: 12%; top: 10px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.3); overflow: hidden; }
+.cam .meter i { display: block; height: 100%; width: 0; background: #E5484D; transition: width .25s, background .25s; }
+.btns3 { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 8px; }
+.raw { font-size: 11px; color: var(--muted); word-break: break-all; background: var(--sunk); padding: 8px; border-radius: 8px; }
 .qrgame { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .qrgame:last-child { border-bottom: 0; }
 .loading { padding: 40px 16px; text-align: center; color: var(--muted); }
@@ -301,10 +306,10 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
 <div class="modal" id="m-qr" hidden role="dialog" aria-modal="true" aria-labelledby="m-qr-h">
   <div class="sheet">
     <h3 id="m-qr-h">로또 QR로 당첨 확인</h3>
-    <div class="cam" id="qr-cam"><video id="qr-video" muted playsinline></video><div class="frame"></div></div>
+    <div class="cam" id="qr-cam"><video id="qr-video" muted playsinline></video><div class="frame" id="qr-frame"></div><div class="meter"><i id="qr-meter"></i></div><div class="hint" id="qr-hint">초점을 맞춰주세요</div></div>
     <p id="qr-msg">복권 아래쪽 QR코드를 네모 칸 안에 맞춰주세요.</p>
     <div id="qr-result"></div>
-    <div class="btns"><button class="btn" type="button" data-close="m-qr">닫기</button><button class="btn dark" type="button" id="qr-again">다시 찍기</button></div>
+    <div class="btns3"><button class="btn" type="button" data-close="m-qr">닫기</button><button class="btn" type="button" id="qr-torch" hidden>플래시</button><button class="btn primary" type="button" id="qr-shot">찍기</button></div>
   </div>
 </div>
 
@@ -688,28 +693,94 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
   document.querySelectorAll('[data-close]').forEach(function (b) { b.addEventListener('click', function () { closeModal(b.getAttribute('data-close')); }); });
 
   /* ---------- 로또 QR 읽기 ---------- */
-  var qrStream = null, qrTimer = null;
+  var qrStream = null, qrTimer = null, qrTrack = null, qrBusy = false, qrDone = false, torchOn = false;
+  var bd = null;
+  try { if ('BarcodeDetector' in window) bd = new window.BarcodeDetector({ formats: ['qr_code'] }); } catch (e) { bd = null; }
   function qrMsg(t) { $('qr-msg').textContent = t; }
+  function setFocusLevel(level) {
+    /* level 0~1: 빨강 → 주황 → 초록 */
+    var color = level < 0.35 ? '#E5484D' : level < 0.7 ? '#F5A524' : '#30A46C';
+    $('qr-frame').style.borderColor = color;
+    $('qr-meter').style.width = Math.round(Math.max(0.08, level) * 100) + '%';
+    $('qr-meter').style.background = color;
+    $('qr-hint').textContent = level < 0.35 ? '초점을 맞춰주세요' : level < 0.7 ? '조금만 더 가까이, 흔들리지 않게' : '좋아요! 그대로 잠깐만요';
+  }
+  /* 화면 가운데(네모 칸) 부분만 잘라서 읽어요 */
+  function grabCenter(v, maxSide, ratio) {
+    var vw = v.videoWidth, vh = v.videoHeight, side = Math.min(vw, vh) * (ratio || 0.8);
+    var sx = (vw - side) / 2, sy = (vh - side) / 2, out = Math.min(maxSide, Math.round(side));
+    var c = document.createElement('canvas'); c.width = out; c.height = out;
+    var ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(v, sx, sy, side, side, 0, 0, out, out);
+    return { canvas: c, ctx: ctx, size: out };
+  }
+  /* 선명도(초점) 재기: 작은 흑백 사진에서 경계가 얼마나 또렷한지 */
+  function sharpness(v) {
+    var g = grabCenter(v, 160, 0.6), d = g.ctx.getImageData(0, 0, g.size, g.size).data, n = g.size, gray = new Float32Array(n * n);
+    for (var i = 0; i < n * n; i++) gray[i] = d[i * 4] * 0.299 + d[i * 4 + 1] * 0.587 + d[i * 4 + 2] * 0.114;
+    var sum = 0, sum2 = 0, cnt = 0;
+    for (var y = 1; y < n - 1; y++) for (var x = 1; x < n - 1; x++) {
+      var k = y * n + x, lap = 4 * gray[k] - gray[k - 1] - gray[k + 1] - gray[k - n] - gray[k + n];
+      sum += lap; sum2 += lap * lap; cnt++;
+    }
+    var mean = sum / cnt, variance = sum2 / cnt - mean * mean;
+    return Math.min(1, Math.sqrt(Math.max(0, variance)) / 28);
+  }
+  async function decodeCanvas(c, ctx, size, hard) {
+    if (bd) {
+      try { var r = await bd.detect(c); if (r && r.length && r[0].rawValue) return r[0].rawValue; } catch (e) {}
+    }
+    if (window.jsQR) {
+      var code = window.jsQR(ctx.getImageData(0, 0, size, size).data, size, size, { inversionAttempts: hard ? 'attemptBoth' : 'dontInvert' });
+      if (code && code.data) return code.data;
+    }
+    return null;
+  }
+  async function tick(hard) {
+    var v = $('qr-video');
+    if (qrBusy || qrDone || v.readyState < 2 || !v.videoWidth) return;
+    qrBusy = true;
+    try {
+      setFocusLevel(sharpness(v));
+      var tries = hard ? [[1200, 0.9], [900, 0.7], [700, 0.5], [1600, 1]] : [[720, 0.8]];
+      for (var i = 0; i < tries.length && !qrDone; i++) {
+        var g = grabCenter(v, tries[i][0], tries[i][1]);
+        var text = await decodeCanvas(g.canvas, g.ctx, g.size, hard);
+        if (text) { qrDone = true; setFocusLevel(1); $('qr-hint').textContent = '읽었어요!'; finishQr(text); break; }
+      }
+      if (hard && !qrDone) qrMsg('이번 사진에서는 QR을 찾지 못했어요. 칸 안에 QR이 꽉 차게 맞추고 다시 찍어주세요.');
+    } finally { qrBusy = false; }
+  }
+  function finishQr(text) {
+    setTimeout(function () { stopQr(); $('qr-cam').hidden = true; $('qr-shot').textContent = '다시 찍기'; handleQr(text); }, 250);
+  }
   async function startQr() {
-    $('qr-result').innerHTML = ''; $('qr-cam').hidden = false;
-    qrMsg('복권 아래쪽 QR코드를 네모 칸 안에 맞춰주세요.');
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.jsQR) { $('qr-cam').hidden = true; qrMsg('이 화면에서는 카메라를 쓸 수 없어요. 휴대폰에 설치한 앱에서 사용해 주세요.'); return; }
-    try { qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false }); }
-    catch (e) { $('qr-cam').hidden = true; qrMsg('카메라를 켜지 못했어요. 휴대폰 설정 → 애플리케이션 → 긁기전에 → 권한에서 카메라를 허용한 뒤 다시 찍어주세요.'); return; }
+    stopQr();
+    qrDone = false; torchOn = false;
+    $('qr-result').innerHTML = ''; $('qr-cam').hidden = false; $('qr-shot').textContent = '찍기';
+    qrMsg('복권 아래쪽 QR코드를 네모 칸에 꽉 차게 맞추면 자동으로 읽어요. 잘 안 되면 찍기를 눌러주세요.');
+    setFocusLevel(0);
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || (!window.jsQR && !bd)) { $('qr-cam').hidden = true; qrMsg('이 화면에서는 카메라를 쓸 수 없어요. 휴대폰에 설치한 앱에서 사용해 주세요.'); return; }
+    try {
+      qrStream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } });
+    } catch (e) { $('qr-cam').hidden = true; qrMsg('카메라를 켜지 못했어요. 휴대폰 설정 → 애플리케이션 → 긁기전에 → 권한에서 카메라를 허용한 뒤 다시 찍어주세요.'); return; }
+    qrTrack = qrStream.getVideoTracks()[0];
+    try {
+      var caps = qrTrack.getCapabilities ? qrTrack.getCapabilities() : {};
+      var adv = {};
+      if (caps.focusMode && caps.focusMode.indexOf('continuous') >= 0) adv.focusMode = 'continuous';
+      if (caps.zoom) adv.zoom = Math.min(caps.zoom.max, Math.max(caps.zoom.min, 1.6));
+      if (Object.keys(adv).length) await qrTrack.applyConstraints({ advanced: [adv] });
+      $('qr-torch').hidden = !caps.torch;
+    } catch (e) {}
     var v = $('qr-video'); v.srcObject = qrStream;
     try { await v.play(); } catch (e) {}
-    var c = document.createElement('canvas'), ctx = c.getContext('2d', { willReadFrequently: true });
-    qrTimer = setInterval(function () {
-      if (v.readyState < 2 || !v.videoWidth) return;
-      var w = 640, h = Math.round(v.videoHeight * w / v.videoWidth);
-      c.width = w; c.height = h; ctx.drawImage(v, 0, 0, w, h);
-      var code = window.jsQR(ctx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' });
-      if (code && code.data) { stopQr(); $('qr-cam').hidden = true; handleQr(code.data); }
-    }, 250);
+    qrTimer = setInterval(function () { tick(false); }, 220);
   }
   function stopQr() {
     if (qrTimer) clearInterval(qrTimer); qrTimer = null;
     if (qrStream) { qrStream.getTracks().forEach(function (t) { t.stop(); }); qrStream = null; }
+    qrTrack = null;
   }
   function parseQr(text) {
     var m = /[?&]v=(\d{4})((?:[a-zA-Z]\d{12})+)/.exec(text);
@@ -736,7 +807,7 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
   async function handleQr(text) {
     var official = /^https?:\/\/[\w.]*dhlottery\.co\.kr\//.test(text) ? '<a class="maplink" href="' + esc(text) + '" target="_blank" rel="noopener">동행복권 공식 화면에서도 확인하기</a>' : '';
     var t = parseQr(text);
-    if (!t) { qrMsg('이 QR코드에서는 로또 번호를 읽지 못했어요.'); $('qr-result').innerHTML = official; return; }
+    if (!t) { qrMsg('QR은 읽었지만 로또 번호 형식이 아니에요. 아래 글자를 캡처해서 알려주시면 고칠게요.'); $('qr-result').innerHTML = '<div class="raw">' + esc(text) + '</div>' + official; return; }
     qrMsg(t.ep + '회 복권이에요. 결과를 확인하는 중…');
     var R = null;
     try { R = await roundInfo(t.ep); } catch (e) { R = null; }
@@ -756,7 +827,16 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
     }).join('') + (R ? '<div class="result ' + (best ? 'win' : '') + '" style="margin-top:8px">' + (best ? '축하해요! 가장 높은 등수는 ' + RANK_LABEL[best - 1] + '이에요. (' + won(R.ranks[best - 1].amt) + ')' : '아쉽게도 모두 낙첨이에요.') + '</div>' : '') + official;
   }
   $('qr-open').addEventListener('click', function () { openModal('m-qr'); startQr(); });
-  $('qr-again').addEventListener('click', function () { stopQr(); startQr(); });
+  $('qr-shot').addEventListener('click', function () {
+    if (qrDone || !qrStream) { startQr(); return; }
+    qrMsg('찍은 사진을 꼼꼼히 읽는 중이에요…');
+    tick(true);
+  });
+  $('qr-torch').addEventListener('click', async function () {
+    if (!qrTrack) return;
+    torchOn = !torchOn;
+    try { await qrTrack.applyConstraints({ advanced: [{ torch: torchOn }] }); this.textContent = torchOn ? '플래시 끄기' : '플래시'; } catch (e) { torchOn = false; }
+  });
 
   /* ---------- 뒤로가기·종료 확인·다시 열 때 새로 받기 (안드로이드 앱) ---------- */
   var lastLive = 0;
