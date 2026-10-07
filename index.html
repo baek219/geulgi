@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<style>html{color-scheme:light}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<style>html{color-scheme:light}body{margin:0}[hidden]{display:none!important}img{max-width:100%}:root{padding-top:env(safe-area-inset-top,0px)}</style>
 <title>긁기전에</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -154,6 +154,10 @@ nav.tabs .in { max-width: 480px; margin: 0 auto; display: grid; grid-template-co
 nav.tabs a { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; color: var(--muted); font-size: 12px; text-decoration: none; min-height: 48px; }
 nav.tabs a[aria-current="page"] { color: var(--ink); font-weight: 700; }
 nav.tabs a[aria-current="page"] svg { color: var(--accent); }
+.refresh { margin-left: auto; width: 44px; height: 44px; border-radius: 12px; border: 0; background: rgba(255,255,255,.12); color: var(--band-ink); display: grid; place-items: center; }
+.refresh.spin svg { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.live { font-size: 12px; color: var(--band-muted); }
 .loading { padding: 40px 16px; text-align: center; color: var(--muted); }
 @media (prefers-reduced-motion: no-preference) { .bar > i { transition: width .6s ease; } }
 </style>
@@ -167,8 +171,9 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
   <!-- ① 스피또 -->
   <section id="v-speetto" hidden>
     <header class="band">
-      <div class="brand"><span class="logo" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 12h4"/><path d="M15 10l2 2-2 2"/></svg></span>긁기전에</div>
+      <div class="brand"><span class="logo" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 12h4"/><path d="M15 10l2 2-2 2"/></svg></span>긁기전에<button type="button" id="refresh" class="refresh" hidden aria-label="최신 자료 다시 받기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div>
       <div class="sub" id="sp-asof"></div>
+      <div class="live" id="live" hidden></div>
       <h1>지금 판매 중인 스피또<br>남은 당첨 매수</h1>
     </header>
     <div class="wrap">
@@ -508,14 +513,106 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
   }
   window.addEventListener('hashchange', route);
 
-  function start(data) {
-    D = data;
-    $('loading').hidden = true;
+  function renderAll(first) {
     var u = new Date(D.updatedAt);
     $('foot').hidden = false;
-    $('foot').textContent = '자료: ' + D.source + ' · ' + u.getFullYear() + '.' + (u.getMonth() + 1) + '.' + u.getDate() + ' 업데이트 · 동행복권 공식 앱이 아닙니다';
-    renderSpeetto(); renderLotto(); makeLines(); renderPick(); renderStores(); route();
+    $('foot').textContent = '자료: ' + D.source + ' · ' + u.getFullYear() + '.' + (u.getMonth() + 1) + '.' + u.getDate() + ' ' + u.getHours() + ':' + String(u.getMinutes()).padStart(2, '0') + ' 업데이트 · 동행복권 공식 앱이 아닙니다';
+    renderSpeetto(); renderLotto(); if (first) makeLines(); renderPick(); renderStores(); route();
   }
+  function start(data) {
+    var cached = store.get('liveData', null);
+    D = cached && new Date(cached.updatedAt) > new Date(data.updatedAt) ? cached : data;
+    $('loading').hidden = true;
+    renderAll(true);
+    if (isNative) { $('refresh').hidden = false; refreshLive(); }
+  }
+
+  /* ---------- 폰에서 동행복권 자료 직접 받기 (안드로이드 앱에서만) ---------- */
+  var isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  var BASE = 'https://www.dhlottery.co.kr';
+  var busy = false;
+  function getJ(path) {
+    return fetch(BASE + path, { headers: { 'Accept': 'application/json, text/javascript, */*', 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+  }
+  function cleanShop(s) { return { n: (s.shpNm || '').trim(), a: (s.shpAddr || '').replace(/\s+/g, ' ').trim() }; }
+  function uniqueFirst(list) {
+    var seen = {}, out = [];
+    (list || []).forEach(function (s) {
+      if (!(s.wnShpRnk == 1 || s.wnRnkVl == 1)) return;
+      var c = cleanShop(s), k = c.n + '|' + c.a;
+      if (!seen[k]) { seen[k] = 1; out.push(c); }
+    });
+    return out;
+  }
+  var CODES = { SP2000: 'LP35', SP1000: 'LP34', SP500: 'LP33' };
+  async function fetchLive() {
+    var main = (await getJ('/selectMainInfo.do')).data.result;
+    var speetto = main.sellList.st.map(function (s) {
+      return { type: s.stGmTypeCd, ep: s.stEpsd, rate: s.stSpmtRt, r1: s.stRnk1Rt, r2: s.stRnk2Rt, r3: s.stRnk3Rt, prize1: s.rnk1Atm, asOf: s.dataChgDt, saleEnd: s.stNtslEndDt, payEnd: s.stGiveEndDt, status: s.ntslStatus };
+    });
+    var winners = {};
+    for (var i = 0; i < speetto.length; i++) {
+      var s = speetto[i];
+      var d = (await getJ('/wnprchsplcsrch/selectStWnShp.do?srchWnShpRnk=all&srchLtEpsd=' + s.ep + '&srchShpLctn=&srchLtGdsCd=' + CODES[s.type])).data;
+      winners[s.type + '_' + s.ep] = uniqueFirst(d && d.list);
+    }
+    var recent = main.pstLtEpstInfo.lt645, top = recent[0];
+    recent.forEach(function (r) { if (r.ltEpsd > top.ltEpsd) top = r; });
+    var latest = { ep: top.ltEpsd, date: top.ltRflYmd, nums: [top.tm1WnNo, top.tm2WnNo, top.tm3WnNo, top.tm4WnNo, top.tm5WnNo, top.tm6WnNo], bonus: top.bnsWnNo,
+      ranks: [1, 2, 3, 4, 5].map(function (k) { return { n: top['rnk' + k + 'WnNope'], amt: top['rnk' + k + 'WnAmt'] }; }) };
+    var shops = ((await getJ('/wnprchsplcsrch/selectLtWnShp.do?srchWnShpRnk=1&srchLtEpsd=' + latest.ep + '&srchShpLctn=')).data.list || [])
+      .map(function (s) { var c = cleanShop(s); c.how = s.atmtPsvYnTxt || ''; return c; });
+    var stats = { lastRound: D.lotto.stats.lastRound, counts: D.lotto.stats.counts.slice() };
+    for (var ep = stats.lastRound + 1; ep <= latest.ep; ep++) {
+      var rows = (await getJ('/lt645/selectPstLt645InfoNew.do?srchDir=center&srchLtEpsd=' + ep)).data.list;
+      var row = rows.filter(function (r) { return r.ltEpsd === ep; })[0];
+      if (!row) throw new Error('로또 ' + ep + '회 자료 없음');
+      for (var n = 1; n <= 6; n++) stats.counts[row['tm' + n + 'WnNo'] - 1]++;
+      stats.lastRound = ep;
+    }
+    return { updatedAt: new Date().toISOString(), source: D.source, speetto: speetto, speettoWinners: winners, speettoTop: D.speettoTop,
+      speettoTopAt: D.speettoTopAt, lotto: { latest: latest, firstShops: shops, stats: stats } };
+  }
+  async function fetchTop() {
+    var top = {};
+    for (var t in CODES) {
+      var eps = (await getJ('/wnprchsplcsrch/selectStEpsdInfo.do?srchLtGdsCd=' + CODES[t])).data.list.map(function (x) { return x.ltEpsd; });
+      var tally = {};
+      for (var i = 0; i < eps.length; i++) {
+        var d = (await getJ('/wnprchsplcsrch/selectStWnShp.do?srchWnShpRnk=all&srchLtEpsd=' + eps[i] + '&srchShpLctn=&srchLtGdsCd=' + CODES[t])).data;
+        uniqueFirst(d && d.list).forEach(function (c) { var k = c.n + '|' + c.a; tally[k] = tally[k] || { n: c.n, a: c.a, c: 0 }; tally[k].c++; });
+      }
+      top[t] = { rounds: eps.length, top: Object.keys(tally).map(function (k) { return tally[k]; }).sort(function (a, b) { return b.c - a.c; }).slice(0, 6) };
+    }
+    return top;
+  }
+  function setLive(text) { $('live').hidden = false; $('live').textContent = text; }
+  async function refreshLive() {
+    if (busy) return; busy = true;
+    $('refresh').classList.add('spin');
+    setLive('동행복권에서 최신 자료를 받아오는 중이에요…');
+    try {
+      D = await fetchLive();
+      store.set('liveData', D);
+      renderAll(false);
+      var now = new Date();
+      setLive('방금 최신 자료로 바꿨어요 (' + now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0') + ')');
+      var weekOld = !D.speettoTopAt || (Date.now() - new Date(D.speettoTopAt).getTime()) > 7 * 864e5;
+      if (weekOld) {
+        D.speettoTop = await fetchTop();
+        D.speettoTopAt = new Date().toISOString();
+        store.set('liveData', D);
+        renderStores();
+      }
+    } catch (e) {
+      setLive('최신 자료를 받지 못해서 저장된 자료를 보여주고 있어요. (' + (e && e.message ? e.message : '연결 오류') + ')');
+    }
+    $('refresh').classList.remove('spin');
+    busy = false;
+  }
+  $('refresh').addEventListener('click', refreshLive);
+
   fetch('data.json', { cache: 'no-store' })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(start)
@@ -524,7 +621,8 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
 </script>
 
 <script>
-if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); }); }
+var native = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+if (!native && 'serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); }); }
 </script>
 </body>
 </html>

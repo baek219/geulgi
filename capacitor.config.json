@@ -1,0 +1,10 @@
+{
+  "appId": "io.github.baek219.geulgi",
+  "appName": "긁기전에",
+  "webDir": "www",
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}
