@@ -22,10 +22,13 @@ jobs:
       - name: 앱 재료 준비
         run: |
           mkdir -p www
-          cp index.html data.json manifest.json icon-192.png icon-512.png www/
+          cp index.html data.json manifest.json icon-192.png icon-512.png jsQR.js www/
           npm init -y
-          npm install @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
+          npm install @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7 @capacitor/app@7
+          cp node_modules/@capacitor/core/dist/capacitor.js www/
           npx cap add android
+          sed -i 's#<uses-permission android:name="android.permission.INTERNET" />#<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />#' android/app/src/main/AndroidManifest.xml
+          grep -q "permission.CAMERA" android/app/src/main/AndroidManifest.xml
           sed -i 's/targetSdkVersion = [0-9]*/targetSdkVersion = 34/' android/variables.gradle
           sed -i "s/versionCode 1$/versionCode ${{ github.run_number }}/; s/versionName \"1.0\"/versionName \"1.${{ github.run_number }}\"/" android/app/build.gradle
           RES=android/app/src/main/res
