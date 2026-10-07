@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#141821">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>html{color-scheme:light}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>긁기전에</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one phone-width column, dark header band per tab, white cards on a cool grey ground, fixed bottom tab bar. */
+:root {
+  --ground: #F2F4F7;
+  --card: #FFFFFF;
+  --sunk: #F5F7FA;
+  --line: #E3E7ED;
+  --ink: #141821;
+  --muted: #5B6472;
+  --band: #141821;
+  --band-ink: #FFFFFF;
+  --band-muted: #B8C0CC;
+  --accent: #E8590C;
+  --hit-bg: #FFF1E6;
+  --hit-ink: #B33F00;
+  --warn-bg: #FFF7F0;
+  --warn-line: #F5D3BB;
+  --warn-ink: #5A2A0C;
+  --sp2000: #C2410C;
+  --sp1000: #1D4ED8;
+  --sp500: #0F766E;
+  --font: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0E1117; --card: #181C24; --sunk: #20252F; --line: #2A303B;
+    --ink: #ECEFF4; --muted: #A3ACBA; --band: #05070B; --band-ink: #FFFFFF; --band-muted: #A3ACBA;
+    --accent: #F0702A; --hit-bg: #3A2214; --hit-ink: #FFB083;
+    --warn-bg: #2A1C12; --warn-line: #5A3A22; --warn-ink: #F5D3BB;
+    --sp2000: #D9541C; --sp1000: #3B6EF0; --sp500: #14958B;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #0E1117; --card: #181C24; --sunk: #20252F; --line: #2A303B;
+  --ink: #ECEFF4; --muted: #A3ACBA; --band: #05070B; --band-ink: #FFFFFF; --band-muted: #A3ACBA;
+  --accent: #F0702A; --hit-bg: #3A2214; --hit-ink: #FFB083;
+  --warn-bg: #2A1C12; --warn-line: #5A3A22; --warn-ink: #F5D3BB;
+  --sp2000: #D9541C; --sp1000: #3B6EF0; --sp500: #14958B;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--ground); color: var(--ink); font-family: var(--font); font-size: 15px; -webkit-tap-highlight-color: transparent; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.app { max-width: 480px; margin: 0 auto; min-height: 100%; padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+.band { background: var(--band); color: var(--band-ink); padding: 20px 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 700; letter-spacing: -0.3px; }
+.brand .logo { width: 32px; height: 32px; border-radius: 9px; background: var(--accent); display: grid; place-items: center; }
+.band .sub { font-size: 13px; color: var(--band-muted); }
+.band h1 { margin: 0; font-size: 22px; line-height: 1.35; text-wrap: balance; }
+.wrap { padding: 14px 16px 8px; display: flex; flex-direction: column; gap: 12px; }
+.card { background: var(--card); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.card h2 { margin: 0; font-size: 16px; }
+.note { font-size: 12px; color: var(--muted); line-height: 1.6; margin: 0 4px; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid var(--line); background: var(--card); font-size: 14px; font-weight: 500; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--ground); border-color: var(--ink); font-weight: 700; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; background: var(--sunk); padding: 4px; border-radius: 12px; }
+.seg button { min-height: 42px; padding: 4px 2px; line-height: 1.25; word-break: keep-all; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font-size: 14px; font-weight: 600; }
+.seg button[aria-selected="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+
+/* 스피또 카드 */
+.sp { text-align: left; border: 0; background: var(--card); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; width: 100%; }
+.sp-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.tag { font-size: 12px; font-weight: 700; color: #fff; padding: 3px 8px; border-radius: 6px; }
+.t-SP2000 { background: var(--sp2000); } .t-SP1000 { background: var(--sp1000); } .t-SP500 { background: var(--sp500); }
+.f-SP2000 { background: var(--sp2000); } .f-SP1000 { background: var(--sp1000); } .f-SP500 { background: var(--sp500); }
+.ep { font-size: 17px; font-weight: 700; }
+.small { font-size: 13px; color: var(--muted); }
+.rate { text-align: right; }
+.rate b { font-size: 26px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.bar { height: 8px; border-radius: 4px; background: var(--sunk); overflow: hidden; }
+.bar > i { display: block; height: 100%; border-radius: 4px; }
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.cell { background: var(--sunk); border-radius: 10px; padding: 8px 10px; min-width: 0; }
+.cell .k { font-size: 12px; color: var(--muted); }
+.cell .v { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cell .v small { font-size: 11px; font-weight: 500; color: var(--muted); }
+.cell.hit { background: var(--hit-bg); } .cell.hit .v { color: var(--hit-ink); }
+
+/* 상세 */
+.back { display: inline-flex; align-items: center; gap: 4px; background: none; border: 0; color: var(--band-ink); font-size: 16px; font-weight: 700; padding: 6px 0; min-height: 44px; }
+.big { font-size: 48px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.rows { display: flex; flex-direction: column; }
+.row { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.row:last-child { border-bottom: 0; }
+.row .r { font-weight: 700; }
+.row .num { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.row.first .r, .row.first .num { color: var(--hit-ink); }
+.shop { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.shop:last-child { border-bottom: 0; }
+.shop .rank { flex: none; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-size: 14px; font-weight: 700; background: var(--sunk); color: var(--muted); }
+.shop .rank.top { background: var(--hit-bg); color: var(--hit-ink); }
+.shop .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.shop .nm { font-weight: 600; }
+.shop .ad { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.shop .side { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.maplink { font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none; padding: 6px 0; }
+.pill { white-space: nowrap; flex: none; font-size: 12px; padding: 2px 8px; border-radius: 10px; background: var(--sunk); color: var(--muted); font-weight: 600; }
+
+/* 로또 공 */
+.balls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.ball { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; color: #fff; flex: none; }
+.ball.sm { width: 34px; height: 34px; font-size: 14px; }
+.ball.xs { width: 22px; height: 22px; font-size: 11px; }
+.b1 { background: #F5B700; color: #141821; } .b2 { background: #2F6FD6; } .b3 { background: #C7362D; } .b4 { background: #636D7D; } .b5 { background: #23824A; }
+.ball.dim { opacity: .35; }
+.plus { color: var(--band-muted); font-size: 18px; padding: 0 2px; }
+.ball.bonus { box-shadow: 0 0 0 2px var(--band-ink); }
+
+.inputs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.inputs input { height: 46px; width: 100%; border: 1px solid var(--line); border-radius: 10px; text-align: center; font-size: 17px; font-weight: 600; background: var(--card); }
+.btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.btn { min-height: 50px; border-radius: 13px; border: 1px solid var(--line); background: var(--card); font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+.btn.dark { background: var(--ink); border-color: var(--ink); color: var(--ground); }
+.result { font-size: 15px; font-weight: 600; padding: 12px; border-radius: 12px; background: var(--sunk); }
+.result.win { background: var(--hit-bg); color: var(--hit-ink); }
+.cta { display: flex; justify-content: space-between; align-items: center; background: var(--accent); color: #fff; border: 0; border-radius: 16px; padding: 16px 18px; text-align: left; width: 100%; }
+.cta b { font-size: 17px; display: block; }
+.cta span { font-size: 13px; opacity: .9; }
+
+.line { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.line:last-child { border-bottom: 0; }
+.line .lbl { width: 20px; font-weight: 700; color: var(--muted); flex: none; }
+.line .balls { flex: 1; gap: 5px; flex-wrap: nowrap; }
+.iconbtn { flex: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); display: grid; place-items: center; color: var(--muted); }
+.iconbtn.on { color: var(--accent); border-color: var(--accent); }
+.pool { display: flex; flex-wrap: wrap; gap: 6px; }
+.pool span.p { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px 3px 3px; border-radius: 14px; background: var(--sunk); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.warn { background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn-ink); border-radius: 14px; padding: 14px; font-size: 13px; line-height: 1.6; }
+.empty { color: var(--muted); font-size: 14px; padding: 6px 0; }
+.more { border: 0; background: none; color: var(--accent); font-weight: 600; min-height: 40px; }
+
+nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 1px solid var(--line); padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px)); z-index: 5; }
+nav.tabs .in { max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+nav.tabs a { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; color: var(--muted); font-size: 12px; text-decoration: none; min-height: 48px; }
+nav.tabs a[aria-current="page"] { color: var(--ink); font-weight: 700; }
+nav.tabs a[aria-current="page"] svg { color: var(--accent); }
+.loading { padding: 40px 16px; text-align: center; color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) { .bar > i { transition: width .6s ease; } }
+</style>
+</head>
+<body>
+
+
+<div class="app">
+  <div id="loading" class="loading">자료를 불러오는 중이에요…</div>
+
+  <!-- ① 스피또 -->
+  <section id="v-speetto" hidden>
+    <header class="band">
+      <div class="brand"><span class="logo" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 12h4"/><path d="M15 10l2 2-2 2"/></svg></span>긁기전에</div>
+      <div class="sub" id="sp-asof"></div>
+      <h1>지금 판매 중인 스피또<br>남은 당첨 매수</h1>
+    </header>
+    <div class="wrap">
+      <div class="chips" role="group" aria-label="권종 고르기" id="sp-chips"></div>
+      <div id="sp-list" style="display:flex;flex-direction:column;gap:12px"></div>
+      <p class="note">출고율은 찍어낸 복권 중 판매점까지 나간 비율이에요. 출고율이 높다고 내가 살 한 장의 당첨 확률이 올라가지는 않아요.</p>
+    </div>
+  </section>
+
+  <!-- ①-상세 -->
+  <section id="v-detail" hidden>
+    <header class="band" id="dt-band">
+      <button class="back" id="dt-back" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span id="dt-title"></span></button>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px">
+        <div><div class="sub">출고율</div><div class="big" id="dt-rate"></div></div>
+        <div class="sub" style="text-align:right;line-height:1.6" id="dt-dates"></div>
+      </div>
+      <div class="bar" style="background:rgba(255,255,255,.2)"><i id="dt-bar" style="background:#fff"></i></div>
+    </header>
+    <div class="wrap">
+      <div class="card"><h2>등수별 남은 매수</h2><div class="rows" id="dt-rows"></div></div>
+      <div class="card"><h2 id="dt-shops-h">이 회차 1등 나온 곳</h2><div id="dt-shops"></div></div>
+    </div>
+  </section>
+
+  <!-- ② 로또 -->
+  <section id="v-lotto" hidden>
+    <header class="band">
+      <div class="sub" id="lt-sub"></div>
+      <h1 id="lt-title"></h1>
+      <div class="balls" id="lt-balls"></div>
+    </header>
+    <div class="wrap">
+      <a class="cta" href="#pick"><div><b>이번 주 번호 뽑아보기</b><span>무작위 · 자주 나온 번호 · 덜 나온 번호</span></div><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></a>
+      <div class="card">
+        <h2>내 번호 맞춰보기</h2>
+        <div class="inputs" id="my-inputs"></div>
+        <div class="btns"><button class="btn dark" type="button" id="my-check">맞춰보기</button><button class="btn" type="button" id="my-clear">지우기</button></div>
+        <div class="result" id="my-result" hidden></div>
+      </div>
+      <div class="card"><h2>등수별 당첨금</h2><div class="rows" id="lt-ranks"></div></div>
+      <div class="card"><h2 id="lt-shops-h">1등 나온 곳</h2><div id="lt-shops"></div></div>
+      <p class="note">당첨번호는 매주 토요일 추첨 후에 바뀌어요.</p>
+    </div>
+  </section>
+
+  <!-- ③ 번호 뽑기 -->
+  <section id="v-pick" hidden>
+    <header class="band">
+      <div class="sub">재미로 뽑는 로또 번호</div>
+      <h1>번호 뽑아보기</h1>
+      <div class="seg" role="tablist" aria-label="뽑는 방식" id="pk-modes"></div>
+    </header>
+    <div class="wrap">
+      <div class="card">
+        <h2 id="pk-title"></h2>
+        <p class="small" id="pk-desc" style="margin:0;line-height:1.55"></p>
+        <div id="pk-poolwrap"><div class="small" id="pk-poollbl" style="margin-bottom:6px"></div><div class="pool" id="pk-pool"></div></div>
+      </div>
+      <div class="card" style="padding-block:6px"><div id="pk-lines"></div></div>
+      <div class="btns"><button class="btn primary" type="button" id="pk-reroll"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>다시 뽑기</button><button class="btn" type="button" id="pk-saveall">5줄 모두 저장</button></div>
+      <div class="warn">세 가지 방식 모두 <b>재미로 뽑는 번호</b>예요. 로또는 매번 완전히 무작위라서, 어떤 방식이든 1등 확률은 똑같이 8,145,060분의 1이에요.</div>
+      <div class="card">
+        <h2>저장한 번호</h2>
+        <div id="pk-saved"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ④ 판매점 -->
+  <section id="v-stores" hidden>
+    <header class="band">
+      <div class="sub">동행복권 발표 기준</div>
+      <h1>1등 나온 판매점</h1>
+      <div class="seg" role="tablist" aria-label="복권 종류" id="st-tabs"></div>
+    </header>
+    <div class="wrap">
+      <div class="card"><h2 id="st-h"></h2><div id="st-list"></div></div>
+      <p class="note">1등 배출 횟수는 지난 기록일 뿐, 앞으로의 당첨과는 관계없어요. '지도'를 누르면 네이버 지도에서 위치를 찾아봐요.</p>
+    </div>
+  </section>
+
+  <p class="note" id="foot" style="text-align:center;padding:8px 0 16px" hidden></p>
+</div>
+
+<nav class="tabs" aria-label="메뉴">
+  <div class="in">
+    <a href="#speetto" data-tab="speetto"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 12h4"/><path d="M15 10l2 2-2 2"/></svg>스피또</a>
+    <a href="#lotto" data-tab="lotto"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="9" r="4"/><circle cx="16" cy="9" r="4"/><circle cx="12" cy="16" r="4"/></svg>로또</a>
+    <a href="#pick" data-tab="pick"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><circle cx="9" cy="15" r="1.2" fill="currentColor"/></svg>번호 뽑기</a>
+    <a href="#stores" data-tab="stores"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>1등 판매점</a>
+  </div>
+</nav>
+
+<script>
+(function () {
+  var D = null;
+  var NAMES = { SP2000: '스피또 2000', SP1000: '스피또 1000', SP500: '스피또 500' };
+  var RANK_LABEL = ['1등', '2등', '3등', '4등', '5등'];
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+  var won = function (n) {
+    if (n >= 100000000) { var e = n / 100000000; return (e >= 10 ? Math.round(e) : Math.round(e * 10) / 10) + '억 원'; }
+    if (n >= 10000) return Math.round(n / 10000).toLocaleString('ko-KR') + '만 원';
+    return n.toLocaleString('ko-KR') + '원';
+  };
+  var ymd = function (s) { return s.slice(0, 4) + '.' + s.slice(4, 6) + '.' + s.slice(6, 8); };
+  var parseQty = function (s) { var m = /([\d,]+)\s*매\s*\/\s*([\d,]+)/.exec(s || ''); return m ? { left: +m[1].replace(/,/g, ''), total: +m[2].replace(/,/g, '') } : { left: 0, total: 0 }; };
+  var short = function (n) { return n >= 10000 ? (Math.round(n / 1000) / 10).toLocaleString('ko-KR') + '만' : n.toLocaleString('ko-KR'); };
+  var ballCls = function (n) { return n <= 10 ? 'b1' : n <= 20 ? 'b2' : n <= 30 ? 'b3' : n <= 40 ? 'b4' : 'b5'; };
+  var ball = function (n, size, extra) { return '<span class="ball ' + (size || '') + ' ' + ballCls(n) + ' ' + (extra || '') + '">' + n + '</span>'; };
+  var mapUrl = function (a) { return 'https://map.naver.com/p/search/' + encodeURIComponent(a); };
+  var shopRow = function (s, i, right) {
+    var isNet = /dhlottery/.test(s.a);
+    return '<div class="shop">' + (i != null ? '<span class="rank ' + (i < 3 ? 'top' : '') + '">' + (i + 1) + '</span>' : '') +
+      '<div class="body"><span class="nm">' + esc(s.n) + '</span><span class="ad">' + esc(s.a) + '</span></div>' +
+      '<div class="side">' + (right || '') + (isNet ? '' : '<a class="maplink" href="' + mapUrl(s.a) + '" target="_blank" rel="noopener">지도</a>') + '</div></div>';
+  };
+
+  /* ---------- 스피또 ---------- */
+  var spFilter = store.get('spFilter', 'all');
+  function renderSpeetto() {
+    var asof = D.speetto.map(function (s) { return s.asOf; }).sort().pop();
+    $('sp-asof').textContent = '동행복권 공개 자료 · 20' + asof.replace(/-/g, '.') + ' 기준';
+    var opts = [['all', '전체'], ['SP2000', '2000'], ['SP1000', '1000'], ['SP500', '500']];
+    $('sp-chips').innerHTML = opts.map(function (o) { return '<button type="button" class="chip" data-f="' + o[0] + '" aria-pressed="' + (spFilter === o[0]) + '">' + o[1] + '</button>'; }).join('');
+    var list = D.speetto.filter(function (s) { return spFilter === 'all' || s.type === spFilter; });
+    $('sp-list').innerHTML = list.map(function (s) {
+      var a = parseQty(s.r1), b = parseQty(s.r2), c = parseQty(s.r3);
+      var status = s.rate >= 100 ? '출고 완료' : s.status;
+      return '<button type="button" class="sp" data-key="' + s.type + '_' + s.ep + '">' +
+        '<div class="sp-top"><div style="display:flex;flex-direction:column;gap:4px"><div style="display:flex;align-items:center;gap:8px"><span class="tag t-' + s.type + '">' + NAMES[s.type] + '</span><span class="ep">' + s.ep + '회</span></div><span class="small">' + esc(status) + ' · 1등 ' + esc(s.prize1) + '</span></div>' +
+        '<div class="rate"><div class="small">출고율</div><b>' + s.rate + '</b><span>%</span></div></div>' +
+        '<div class="bar"><i class="f-' + s.type + '" style="width:' + Math.min(100, s.rate) + '%"></i></div>' +
+        '<div class="trio">' +
+        '<div class="cell ' + (a.left > 0 ? 'hit' : '') + '"><div class="k">1등 남음</div><div class="v">' + a.left + '<small>/' + a.total + '매</small></div></div>' +
+        '<div class="cell"><div class="k">2등 남음</div><div class="v">' + b.left + '<small>/' + b.total + '매</small></div></div>' +
+        '<div class="cell"><div class="k">3등 남음</div><div class="v">' + short(c.left) + '<small>매</small></div></div>' +
+        '</div></button>';
+    }).join('') || '<div class="empty">지금 판매 중인 회차가 없어요.</div>';
+  }
+  $('sp-chips').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-f]'); if (!b) return;
+    spFilter = b.getAttribute('data-f'); store.set('spFilter', spFilter); renderSpeetto();
+  });
+  $('sp-list').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-key]'); if (!b) return;
+    location.hash = 'sp-' + b.getAttribute('data-key');
+  });
+  function renderDetail(key) {
+    var s = D.speetto.filter(function (x) { return x.type + '_' + x.ep === key; })[0];
+    if (!s) { location.hash = 'speetto'; return; }
+    var color = getComputedStyle(document.documentElement).getPropertyValue('--' + s.type.toLowerCase());
+    $('dt-band').style.background = color;
+    $('dt-title').textContent = NAMES[s.type] + ' · ' + s.ep + '회';
+    $('dt-rate').innerHTML = s.rate + '<span style="font-size:24px">%</span>';
+    $('dt-bar').style.width = Math.min(100, s.rate) + '%';
+    $('dt-dates').innerHTML = '20' + s.asOf.replace(/-/g, '.') + ' 기준<br>판매 마감 ' + s.saleEnd.replace(/-/g, '.') + '<br>당첨금 지급 마감 ' + s.payEnd.replace(/-/g, '.');
+    var q = [parseQty(s.r1), parseQty(s.r2), parseQty(s.r3)];
+    $('dt-rows').innerHTML = q.map(function (x, i) {
+      return '<div class="row ' + (i === 0 ? 'first' : '') + '"><span class="r">' + RANK_LABEL[i] + '</span><span class="small">' + (i === 0 ? '당첨금 ' + esc(s.prize1) + ' · ' : '') + '전체 ' + x.total.toLocaleString('ko-KR') + '매</span><span class="num">' + x.left.toLocaleString('ko-KR') + '매 남음</span></div>';
+    }).join('');
+    var shops = D.speettoWinners[key] || [];
+    $('dt-shops-h').textContent = '이 회차 1등 나온 곳 (' + shops.length + '곳)';
+    $('dt-shops').innerHTML = shops.length ? shops.map(function (x) { return shopRow(x); }).join('') : '<div class="empty">아직 1등이 나오지 않았어요.</div>';
+  }
+  $('dt-back').addEventListener('click', function () { location.hash = 'speetto'; });
+
+  /* ---------- 로또 ---------- */
+  function rankOf(mine, latest) {
+    var hit = mine.filter(function (n) { return latest.nums.indexOf(n) >= 0; }).length;
+    var bonus = mine.indexOf(latest.bonus) >= 0;
+    if (hit === 6) return { r: 1, hit: hit };
+    if (hit === 5 && bonus) return { r: 2, hit: hit };
+    if (hit === 5) return { r: 3, hit: hit };
+    if (hit === 4) return { r: 4, hit: hit };
+    if (hit === 3) return { r: 5, hit: hit };
+    return { r: 0, hit: hit };
+  }
+  function renderLotto() {
+    var L = D.lotto.latest;
+    $('lt-sub').textContent = '로또 6/45 · ' + ymd(L.date) + ' 추첨';
+    $('lt-title').textContent = '제 ' + L.ep.toLocaleString('ko-KR') + '회 당첨번호';
+    $('lt-balls').innerHTML = L.nums.map(function (n) { return ball(n); }).join('') + '<span class="plus" aria-label="보너스">+</span>' + ball(L.bonus, '', 'bonus');
+    $('lt-ranks').innerHTML = L.ranks.map(function (r, i) {
+      return '<div class="row ' + (i === 0 ? 'first' : '') + '"><span class="r">' + RANK_LABEL[i] + '</span><span>' + won(r.amt) + '</span><span class="num small" style="font-weight:600">' + r.n.toLocaleString('ko-KR') + '명</span></div>';
+    }).join('');
+    var shops = D.lotto.firstShops;
+    $('lt-shops-h').textContent = '1등 나온 곳 (' + shops.length + '곳)';
+    var showAll = false;
+    var draw = function () {
+      var list = showAll ? shops : shops.slice(0, 5);
+      $('lt-shops').innerHTML = list.map(function (s) { return shopRow(s, null, '<span class="pill">' + esc(s.how) + '</span>'); }).join('') +
+        (shops.length > 5 ? '<button type="button" class="more" id="lt-more">' + (showAll ? '접기' : '모두 보기 (' + shops.length + '곳)') + '</button>' : '');
+      var m = $('lt-more'); if (m) m.onclick = function () { showAll = !showAll; draw(); };
+    };
+    draw();
+    var ins = '';
+    for (var i = 0; i < 6; i++) ins += '<input id="my-n' + i + '" inputmode="numeric" maxlength="2" aria-label="내 번호 ' + (i + 1) + '번째" placeholder="-">';
+    $('my-inputs').innerHTML = ins;
+  }
+  $('my-inputs').addEventListener('input', function (e) {
+    var el = e.target; el.value = el.value.replace(/\D/g, '').slice(0, 2);
+    if (el.value.length === 2 || (el.value.length === 1 && +el.value >= 5)) {
+      var next = el.nextElementSibling; if (next) next.focus();
+    }
+  });
+  $('my-check').addEventListener('click', function () {
+    var vals = [], out = $('my-result');
+    for (var i = 0; i < 6; i++) vals.push(+$('my-n' + i).value);
+    out.hidden = false; out.className = 'result';
+    if (vals.some(function (v) { return !v || v < 1 || v > 45; })) { out.textContent = '1부터 45 사이의 번호를 6칸 모두 넣어주세요.'; return; }
+    if (new Set(vals).size !== 6) { out.textContent = '같은 번호가 두 번 들어갔어요. 6개 모두 다른 번호로 넣어주세요.'; return; }
+    var r = rankOf(vals, D.lotto.latest);
+    if (r.r) { out.className = 'result win'; out.textContent = r.hit + '개 맞았어요. ' + RANK_LABEL[r.r - 1] + ' 당첨이에요! (' + won(D.lotto.latest.ranks[r.r - 1].amt) + ')'; }
+    else out.textContent = r.hit + '개 맞았어요. 이번 회차는 아쉽게도 낙첨이에요.';
+  });
+  $('my-clear').addEventListener('click', function () {
+    for (var i = 0; i < 6; i++) $('my-n' + i).value = '';
+    $('my-result').hidden = true; $('my-n0').focus();
+  });
+
+  /* ---------- 번호 뽑기 ---------- */
+  var pkMode = store.get('pkMode', 'random');
+  var pkLines = [];
+  var saved = store.get('savedLines', []);
+  function pools() {
+    var arr = D.lotto.stats.counts.map(function (c, i) { return { n: i + 1, c: c }; });
+    var byHot = arr.slice().sort(function (a, b) { return b.c - a.c || a.n - b.n; });
+    return { hot: byHot.slice(0, 15), cold: byHot.slice(-15).reverse() };
+  }
+  function pick6(pool) {
+    var a = pool.slice();
+    for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a.slice(0, 6).sort(function (x, y) { return x - y; });
+  }
+  function makeLines() {
+    var P = pools(), all = [];
+    for (var n = 1; n <= 45; n++) all.push(n);
+    var src = pkMode === 'hot' ? P.hot.map(function (x) { return x.n; }) : pkMode === 'cold' ? P.cold.map(function (x) { return x.n; }) : all;
+    pkLines = [0, 1, 2, 3, 4].map(function () { return pick6(src); });
+  }
+  var sameLine = function (a, b) { return a.join(',') === b.join(','); };
+  function renderPick() {
+    var modes = [['random', '무작위'], ['hot', '자주 나온 번호'], ['cold', '덜 나온 번호']];
+    $('pk-modes').innerHTML = modes.map(function (m) { return '<button type="button" role="tab" data-m="' + m[0] + '" aria-selected="' + (pkMode === m[0]) + '">' + m[1] + '</button>'; }).join('');
+    var P = pools(), rounds = D.lotto.stats.lastRound;
+    var info = {
+      random: ['완전 무작위', '1부터 45까지 모든 번호 중에서 골고루 6개를 뽑아요.'],
+      hot: ['자주 나온 번호 조합', '1회부터 ' + rounds.toLocaleString('ko-KR') + '회까지 당첨번호로 가장 많이 나온 15개 번호 안에서 6개를 섞어 뽑아요.'],
+      cold: ['덜 나온 번호 조합', '1회부터 ' + rounds.toLocaleString('ko-KR') + '회까지 당첨번호로 가장 적게 나온 15개 번호 안에서 6개를 섞어 뽑아요.']
+    }[pkMode];
+    $('pk-title').textContent = info[0];
+    $('pk-desc').textContent = info[1];
+    var pool = pkMode === 'hot' ? P.hot : pkMode === 'cold' ? P.cold : null;
+    $('pk-poolwrap').hidden = !pool;
+    if (pool) {
+      $('pk-poollbl').textContent = (pkMode === 'hot' ? '많이 나온 번호 15개' : '적게 나온 번호 15개') + ' · 나온 횟수';
+      $('pk-pool').innerHTML = pool.map(function (x) { return '<span class="p">' + ball(x.n, 'xs') + x.c + '회</span>'; }).join('');
+    }
+    $('pk-lines').innerHTML = pkLines.map(function (l, i) {
+      var on = saved.some(function (s) { return sameLine(s.nums, l); });
+      return '<div class="line"><span class="lbl">' + 'ABCDE'.charAt(i) + '</span><div class="balls">' + l.map(function (n) { return ball(n, 'sm'); }).join('') + '</div>' +
+        '<button type="button" class="iconbtn ' + (on ? 'on' : '') + '" data-save="' + i + '" aria-label="' + 'ABCDE'.charAt(i) + '줄 ' + (on ? '저장됨' : '저장하기') + '"><svg width="18" height="18" viewBox="0 0 24 24" fill="' + (on ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button></div>';
+    }).join('');
+    renderSaved();
+  }
+  function renderSaved() {
+    var L = D.lotto.latest;
+    if (!saved.length) { $('pk-saved').innerHTML = '<div class="empty">마음에 드는 줄 오른쪽의 저장 버튼을 누르면 여기에 모여요. 다음 추첨 결과와 자동으로 맞춰봐요.</div>'; return; }
+    $('pk-saved').innerHTML = saved.map(function (s, i) {
+      var r = rankOf(s.nums, L);
+      var tag = s.ep <= L.ep ? (r.r ? '<span class="pill" style="background:var(--hit-bg);color:var(--hit-ink)">' + L.ep + '회 ' + RANK_LABEL[r.r - 1] + '</span>' : '<span class="pill">' + L.ep + '회 ' + r.hit + '개</span>') : '<span class="pill">' + s.ep + '회 대기</span>';
+      return '<div class="line"><div class="balls">' + s.nums.map(function (n) { return ball(n, 'sm', s.ep <= L.ep && L.nums.indexOf(n) < 0 ? 'dim' : ''); }).join('') + '</div>' + tag +
+        '<button type="button" class="iconbtn" data-del="' + i + '" aria-label="이 번호 지우기"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
+    }).join('');
+  }
+  function toggleSave(nums) {
+    var idx = -1; saved.forEach(function (s, i) { if (sameLine(s.nums, nums)) idx = i; });
+    if (idx >= 0) saved.splice(idx, 1);
+    else saved.unshift({ nums: nums, ep: D.lotto.latest.ep + 1 });
+    saved = saved.slice(0, 30); store.set('savedLines', saved);
+  }
+  $('pk-modes').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-m]'); if (!b) return;
+    pkMode = b.getAttribute('data-m'); store.set('pkMode', pkMode); makeLines(); renderPick();
+  });
+  $('pk-reroll').addEventListener('click', function () { makeLines(); renderPick(); });
+  $('pk-saveall').addEventListener('click', function () {
+    pkLines.forEach(function (l) { if (!saved.some(function (s) { return sameLine(s.nums, l); })) toggleSave(l); });
+    renderPick();
+  });
+  $('pk-lines').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-save]'); if (!b) return;
+    toggleSave(pkLines[+b.getAttribute('data-save')]); renderPick();
+  });
+  $('pk-saved').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-del]'); if (!b) return;
+    saved.splice(+b.getAttribute('data-del'), 1); store.set('savedLines', saved); renderPick();
+  });
+
+  /* ---------- 판매점 ---------- */
+  var stTab = store.get('stTab', 'SP1000');
+  function renderStores() {
+    var tabs = [['SP2000', '스피또 2000'], ['SP1000', '스피또 1000'], ['SP500', '스피또 500'], ['LOTTO', '로또']];
+    $('st-tabs').innerHTML = tabs.map(function (t) { return '<button type="button" role="tab" data-t="' + t[0] + '" aria-selected="' + (stTab === t[0]) + '">' + t[1] + '</button>'; }).join('');
+    if (stTab === 'LOTTO') {
+      var L = D.lotto.latest;
+      $('st-h').textContent = '로또 ' + L.ep + '회 1등 나온 곳';
+      $('st-list').innerHTML = D.lotto.firstShops.map(function (s) { return shopRow(s, null, '<span class="pill">' + esc(s.how) + '</span>'); }).join('');
+    } else {
+      var T = D.speettoTop[stTab];
+      $('st-h').textContent = NAMES[stTab] + ' 1등 많이 나온 곳 (최근 ' + T.rounds + '개 회차)';
+      $('st-list').innerHTML = T.top.map(function (s, i) { return shopRow(s, i, '<span class="pill">' + s.c + '회</span>'); }).join('');
+    }
+  }
+  $('st-tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-t]'); if (!b) return;
+    stTab = b.getAttribute('data-t'); store.set('stTab', stTab); renderStores();
+  });
+
+  /* ---------- 화면 전환 ---------- */
+  var VIEWS = ['speetto', 'detail', 'lotto', 'pick', 'stores'];
+  function route() {
+    var h = (location.hash || '#speetto').slice(1), view = h, tab = h;
+    if (h.indexOf('sp-') === 0) { view = 'detail'; tab = 'speetto'; renderDetail(h.slice(3)); }
+    if (VIEWS.indexOf(view) < 0) { view = tab = 'speetto'; }
+    VIEWS.forEach(function (v) { $('v-' + v).hidden = v !== view; });
+    document.querySelectorAll('nav.tabs a').forEach(function (a) {
+      if (a.getAttribute('data-tab') === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', route);
+
+  function start(data) {
+    D = data;
+    $('loading').hidden = true;
+    var u = new Date(D.updatedAt);
+    $('foot').hidden = false;
+    $('foot').textContent = '자료: ' + D.source + ' · ' + u.getFullYear() + '.' + (u.getMonth() + 1) + '.' + u.getDate() + ' 업데이트 · 동행복권 공식 앱이 아닙니다';
+    renderSpeetto(); renderLotto(); makeLines(); renderPick(); renderStores(); route();
+  }
+  fetch('data.json', { cache: 'no-store' })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(start)
+    .catch(function () { $('loading').textContent = '자료를 불러오지 못했어요. 인터넷 연결을 확인하고 다시 열어주세요.'; });
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); }); }
+</script>
+</body>
+</html>
