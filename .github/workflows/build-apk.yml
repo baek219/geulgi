@@ -26,6 +26,8 @@ jobs:
           npm init -y
           npm install @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7 @capacitor/app@7
           cp node_modules/@capacitor/core/dist/capacitor.js www/
+          sed -i "s/__APP_VERSION__/1.${{ github.run_number }}/" www/index.html
+          grep -q "'1.${{ github.run_number }}'" www/index.html
           npx cap add android
           sed -i 's#<uses-permission android:name="android.permission.INTERNET" />#<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />#' android/app/src/main/AndroidManifest.xml
           grep -q "permission.CAMERA" android/app/src/main/AndroidManifest.xml
@@ -49,7 +51,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk geulgi.apk
-          gh release create "v${{ github.run_number }}" geulgi.apk \
-            --title "긁기전에 ${{ github.run_number }}번째 버전" \
-            --notes "폰에서 아래 geulgi.apk를 눌러 받은 뒤 설치하세요."
+          cp android/app/build/outputs/apk/debug/app-debug.apk geulgi-1.${{ github.run_number }}.apk
+          gh release create "v${{ github.run_number }}" geulgi-1.${{ github.run_number }}.apk \
+            --title "긁기전에 버전 1.${{ github.run_number }}" \
+            --notes "폰에서 아래 geulgi-1.${{ github.run_number }}.apk를 눌러 받은 뒤 설치하세요. 설치 후 앱 맨 위 '긁기전에' 옆에 버전 1.${{ github.run_number }}이 보이면 성공이에요."
