@@ -74,7 +74,9 @@ button { cursor: pointer; }
 .chip[aria-pressed="true"] { background: var(--ink); color: var(--ground); border-color: var(--ink); font-weight: 700; }
 .seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; background: var(--sunk); padding: 4px; border-radius: 12px; }
 .seg button { min-height: 42px; padding: 4px 2px; line-height: 1.25; word-break: keep-all; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font-size: 14px; font-weight: 600; }
-.seg button[aria-selected="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.seg button[aria-selected="true"] { background: var(--accent); color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+.seg button small { display: block; font-size: 11px; font-weight: 500; opacity: .85; }
+.seg button b { display: block; font-size: 15px; }
 
 /* 스피또 카드 */
 .sp { text-align: left; border: 0; background: var(--card); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; width: 100%; }
@@ -117,8 +119,10 @@ button { cursor: pointer; }
 
 /* 로또 공 */
 .balls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.ball { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; color: #fff; flex: none; }
+.ball { width: var(--bs, 38px); height: var(--bs, 38px); border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; color: #fff; flex: none; }
 .ball.sm { width: 34px; height: 34px; font-size: 14px; }
+.band .balls { flex-wrap: nowrap; gap: 5px; --bs: min(40px, calc((100vw - 92px) / 7.4)); }
+.band .ball { font-size: clamp(13px, 3.8vw, 16px); }
 .ball.xs { width: 22px; height: 22px; font-size: 11px; }
 .b1 { background: #F5B700; color: #141821; } .b2 { background: #2F6FD6; } .b3 { background: #C7362D; } .b4 { background: #636D7D; } .b5 { background: #23824A; }
 .ball.dim { opacity: .35; }
@@ -133,14 +137,17 @@ button { cursor: pointer; }
 .btn.dark { background: var(--ink); border-color: var(--ink); color: var(--ground); }
 .result { font-size: 15px; font-weight: 600; padding: 12px; border-radius: 12px; background: var(--sunk); }
 .result.win { background: var(--hit-bg); color: var(--hit-ink); }
-.cta { display: flex; justify-content: space-between; align-items: center; background: var(--accent); color: #fff; border: 0; border-radius: 16px; padding: 16px 18px; text-align: left; width: 100%; }
+.cta { text-decoration: none; display: flex; justify-content: space-between; align-items: center; background: var(--accent); color: #fff; border: 0; border-radius: 16px; padding: 16px 18px; text-align: left; width: 100%; }
 .cta b { font-size: 17px; display: block; }
 .cta span { font-size: 13px; opacity: .9; }
 
 .line { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); }
 .line:last-child { border-bottom: 0; }
 .line .lbl { width: 20px; font-weight: 700; color: var(--muted); flex: none; }
-.line .balls { flex: 1; gap: 5px; flex-wrap: nowrap; }
+.line .balls { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; justify-items: center; }
+.line .balls .ball { width: 100%; height: auto; max-width: 38px; aspect-ratio: 1; font-size: clamp(12px, 3.6vw, 15px); }
+.line .meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.line .meta .pill { align-self: flex-start; }
 .iconbtn { flex: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); display: grid; place-items: center; color: var(--muted); }
 .iconbtn.on { color: var(--accent); border-color: var(--accent); }
 .pool { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -158,6 +165,28 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
 .refresh.spin svg { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .live { font-size: 12px; color: var(--band-muted); }
+.slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.slot { aspect-ratio: 1; max-height: 52px; width: 100%; border-radius: 50%; border: 2px dashed var(--line); background: var(--sunk); color: var(--muted); font-weight: 700; font-size: 16px; display: grid; place-items: center; padding: 0; }
+.slot.next { border-color: var(--accent); }
+.slot.filled { border: 0; color: #fff; }
+.slot.filled.b1 { color: #141821; }
+.pad { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 5px; }
+.pad button { aspect-ratio: 1; width: 100%; padding: 0; border-radius: 50%; border: 1px solid var(--line); background: var(--card); font-size: clamp(11px, 3.3vw, 14px); font-weight: 600; font-variant-numeric: tabular-nums; }
+.pad button.on { border: 0; color: #fff; }
+.pad button.on.b1 { color: #141821; }
+.pad button:disabled { opacity: .35; }
+.slot.b1, .pad button.b1 { background: #F5B700; } .slot.b2, .pad button.b2 { background: #2F6FD6; }
+.slot.b3, .pad button.b3 { background: #C7362D; } .slot.b4, .pad button.b4 { background: #636D7D; }
+.slot.b5, .pad button.b5 { background: #23824A; }
+.modal { position: fixed; inset: 0; z-index: 20; background: rgba(5,7,11,.6); display: grid; place-items: center; padding: 16px; }
+.sheet { background: var(--card); color: var(--ink); border-radius: 18px; padding: 20px; width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; max-height: calc(100% - 32px); overflow-y: auto; }
+.sheet h3 { margin: 0; font-size: 18px; }
+.sheet p { margin: 0; color: var(--muted); line-height: 1.55; }
+.cam { position: relative; width: 100%; aspect-ratio: 1; border-radius: 14px; overflow: hidden; background: #000; }
+.cam video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cam .frame { position: absolute; inset: 18%; border: 3px solid #fff; border-radius: 14px; box-shadow: 0 0 0 999px rgba(0,0,0,.35); }
+.qrgame { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.qrgame:last-child { border-bottom: 0; }
 .loading { padding: 40px 16px; text-align: center; color: var(--muted); }
 @media (prefers-reduced-motion: no-preference) { .bar > i { transition: width .6s ease; } }
 </style>
@@ -210,9 +239,11 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
       <a class="cta" href="#pick"><div><b>이번 주 번호 뽑아보기</b><span>무작위 · 자주 나온 번호 · 덜 나온 번호</span></div><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></a>
       <div class="card">
         <h2>내 번호 맞춰보기</h2>
-        <div class="inputs" id="my-inputs"></div>
-        <div class="btns"><button class="btn dark" type="button" id="my-check">맞춰보기</button><button class="btn" type="button" id="my-clear">지우기</button></div>
+        <p class="small" style="margin:0">아래 번호를 눌러 6개를 고르면 바로 맞춰봐요. 고른 번호를 다시 누르면 빠져요.</p>
+        <div class="slots" id="my-slots"></div>
+        <div class="pad" id="my-pad" role="group" aria-label="번호 고르기"></div>
         <div class="result" id="my-result" hidden></div>
+        <div class="btns"><button class="btn" type="button" id="my-clear">다시 고르기</button><button class="btn dark" type="button" id="qr-open"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3"/><path d="M16 4h3a1 1 0 0 1 1 1v3"/><path d="M20 16v3a1 1 0 0 1-1 1h-3"/><path d="M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M9 9h6v6H9z"/></svg>QR로 확인</button></div>
       </div>
       <div class="card"><h2>등수별 당첨금</h2><div class="rows" id="lt-ranks"></div></div>
       <div class="card"><h2 id="lt-shops-h">1등 나온 곳</h2><div id="lt-shops"></div></div>
@@ -259,6 +290,23 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
   <p class="note" id="foot" style="text-align:center;padding:8px 0 16px" hidden></p>
 </div>
 
+<div class="modal" id="m-exit" hidden role="dialog" aria-modal="true" aria-labelledby="m-exit-h">
+  <div class="sheet">
+    <h3 id="m-exit-h">앱을 종료할까요?</h3>
+    <div class="btns"><button class="btn" type="button" data-close="m-exit">취소</button><button class="btn primary" type="button" id="exit-yes">종료</button></div>
+  </div>
+</div>
+
+<div class="modal" id="m-qr" hidden role="dialog" aria-modal="true" aria-labelledby="m-qr-h">
+  <div class="sheet">
+    <h3 id="m-qr-h">로또 QR로 당첨 확인</h3>
+    <div class="cam" id="qr-cam"><video id="qr-video" muted playsinline></video><div class="frame"></div></div>
+    <p id="qr-msg">복권 아래쪽 QR코드를 네모 칸 안에 맞춰주세요.</p>
+    <div id="qr-result"></div>
+    <div class="btns"><button class="btn" type="button" data-close="m-qr">닫기</button><button class="btn dark" type="button" id="qr-again">다시 찍기</button></div>
+  </div>
+</div>
+
 <nav class="tabs" aria-label="메뉴">
   <div class="in">
     <a href="#speetto" data-tab="speetto"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 12h4"/><path d="M15 10l2 2-2 2"/></svg>스피또</a>
@@ -268,6 +316,8 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
   </div>
 </nav>
 
+<script src="capacitor.js"></script>
+<script src="jsQR.js"></script>
 <script>
 (function () {
   var D = null;
@@ -375,30 +425,43 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
       var m = $('lt-more'); if (m) m.onclick = function () { showAll = !showAll; draw(); };
     };
     draw();
-    var ins = '';
-    for (var i = 0; i < 6; i++) ins += '<input id="my-n' + i + '" inputmode="numeric" maxlength="2" aria-label="내 번호 ' + (i + 1) + '번째" placeholder="-">';
-    $('my-inputs').innerHTML = ins;
+    renderPicker();
   }
-  $('my-inputs').addEventListener('input', function (e) {
-    var el = e.target; el.value = el.value.replace(/\D/g, '').slice(0, 2);
-    if (el.value.length === 2 || (el.value.length === 1 && +el.value >= 5)) {
-      var next = el.nextElementSibling; if (next) next.focus();
+  /* 내 번호: 1~45 눌러서 고르기 */
+  var myNums = [];
+  function renderPicker() {
+    var sorted = myNums.slice().sort(function (a, b) { return a - b; });
+    var sl = '';
+    for (var i = 0; i < 6; i++) {
+      var n = sorted[i];
+      sl += n ? '<button type="button" class="slot filled ' + ballCls(n) + '" data-rm="' + n + '" aria-label="' + n + '번 빼기">' + n + '</button>'
+              : '<button type="button" class="slot ' + (i === myNums.length ? 'next' : '') + '" tabindex="-1" aria-label="빈칸">' + (i + 1) + '</button>';
     }
+    $('my-slots').innerHTML = sl;
+    var pad = '';
+    for (var k = 1; k <= 45; k++) {
+      var on = myNums.indexOf(k) >= 0;
+      pad += '<button type="button" data-n="' + k + '" class="' + (on ? 'on ' + ballCls(k) : '') + '" aria-pressed="' + on + '"' + (!on && myNums.length >= 6 ? ' disabled' : '') + '>' + k + '</button>';
+    }
+    $('my-pad').innerHTML = pad;
+    var out = $('my-result');
+    if (myNums.length < 6) { out.hidden = true; return; }
+    var r = rankOf(myNums, D.lotto.latest), L = D.lotto.latest;
+    out.hidden = false;
+    if (r.r) { out.className = 'result win'; out.textContent = L.ep + '회와 ' + r.hit + '개 맞았어요. ' + RANK_LABEL[r.r - 1] + ' 당첨이에요! (' + won(L.ranks[r.r - 1].amt) + ')'; }
+    else { out.className = 'result'; out.textContent = L.ep + '회와 ' + r.hit + '개 맞았어요. 아쉽게도 낙첨이에요.'; }
+  }
+  $('my-pad').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-n]'); if (!b) return;
+    var n = +b.getAttribute('data-n'), i = myNums.indexOf(n);
+    if (i >= 0) myNums.splice(i, 1); else if (myNums.length < 6) myNums.push(n);
+    renderPicker();
   });
-  $('my-check').addEventListener('click', function () {
-    var vals = [], out = $('my-result');
-    for (var i = 0; i < 6; i++) vals.push(+$('my-n' + i).value);
-    out.hidden = false; out.className = 'result';
-    if (vals.some(function (v) { return !v || v < 1 || v > 45; })) { out.textContent = '1부터 45 사이의 번호를 6칸 모두 넣어주세요.'; return; }
-    if (new Set(vals).size !== 6) { out.textContent = '같은 번호가 두 번 들어갔어요. 6개 모두 다른 번호로 넣어주세요.'; return; }
-    var r = rankOf(vals, D.lotto.latest);
-    if (r.r) { out.className = 'result win'; out.textContent = r.hit + '개 맞았어요. ' + RANK_LABEL[r.r - 1] + ' 당첨이에요! (' + won(D.lotto.latest.ranks[r.r - 1].amt) + ')'; }
-    else out.textContent = r.hit + '개 맞았어요. 이번 회차는 아쉽게도 낙첨이에요.';
+  $('my-slots').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-rm]'); if (!b) return;
+    myNums.splice(myNums.indexOf(+b.getAttribute('data-rm')), 1); renderPicker();
   });
-  $('my-clear').addEventListener('click', function () {
-    for (var i = 0; i < 6; i++) $('my-n' + i).value = '';
-    $('my-result').hidden = true; $('my-n0').focus();
-  });
+  $('my-clear').addEventListener('click', function () { myNums = []; renderPicker(); });
 
   /* ---------- 번호 뽑기 ---------- */
   var pkMode = store.get('pkMode', 'random');
@@ -449,9 +512,10 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
     var L = D.lotto.latest;
     if (!saved.length) { $('pk-saved').innerHTML = '<div class="empty">마음에 드는 줄 오른쪽의 저장 버튼을 누르면 여기에 모여요. 다음 추첨 결과와 자동으로 맞춰봐요.</div>'; return; }
     $('pk-saved').innerHTML = saved.map(function (s, i) {
-      var r = rankOf(s.nums, L);
-      var tag = s.ep <= L.ep ? (r.r ? '<span class="pill" style="background:var(--hit-bg);color:var(--hit-ink)">' + L.ep + '회 ' + RANK_LABEL[r.r - 1] + '</span>' : '<span class="pill">' + L.ep + '회 ' + r.hit + '개</span>') : '<span class="pill">' + s.ep + '회 대기</span>';
-      return '<div class="line"><div class="balls">' + s.nums.map(function (n) { return ball(n, 'sm', s.ep <= L.ep && L.nums.indexOf(n) < 0 ? 'dim' : ''); }).join('') + '</div>' + tag +
+      var r = rankOf(s.nums, L), drawn = s.ep === L.ep;
+      var tag = drawn ? (r.r ? '<span class="pill" style="background:var(--hit-bg);color:var(--hit-ink)">' + L.ep + '회 ' + RANK_LABEL[r.r - 1] + ' 당첨</span>' : '<span class="pill">' + L.ep + '회 ' + r.hit + '개 일치</span>')
+        : s.ep > L.ep ? '<span class="pill">' + s.ep + '회 추첨 기다리는 중</span>' : '<span class="pill">' + s.ep + '회 (지난 회차)</span>';
+      return '<div class="line"><div class="meta"><div class="balls">' + s.nums.map(function (n) { return ball(n, 'sm', drawn && L.nums.indexOf(n) < 0 ? 'dim' : ''); }).join('') + '</div>' + tag + '</div>' +
         '<button type="button" class="iconbtn" data-del="' + i + '" aria-label="이 번호 지우기"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
     }).join('');
   }
@@ -482,8 +546,8 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
   /* ---------- 판매점 ---------- */
   var stTab = store.get('stTab', 'SP1000');
   function renderStores() {
-    var tabs = [['SP2000', '스피또 2000'], ['SP1000', '스피또 1000'], ['SP500', '스피또 500'], ['LOTTO', '로또']];
-    $('st-tabs').innerHTML = tabs.map(function (t) { return '<button type="button" role="tab" data-t="' + t[0] + '" aria-selected="' + (stTab === t[0]) + '">' + t[1] + '</button>'; }).join('');
+    var tabs = [['SP2000', '스피또', '2000'], ['SP1000', '스피또', '1000'], ['SP500', '스피또', '500'], ['LOTTO', '로또', '6/45']];
+    $('st-tabs').innerHTML = tabs.map(function (t) { return '<button type="button" role="tab" data-t="' + t[0] + '" aria-selected="' + (stTab === t[0]) + '"><small>' + t[1] + '</small><b>' + t[2] + '</b></button>'; }).join('');
     if (stTab === 'LOTTO') {
       var L = D.lotto.latest;
       $('st-h').textContent = '로또 ' + L.ep + '회 1등 나온 곳';
@@ -595,6 +659,7 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
     try {
       D = await fetchLive();
       store.set('liveData', D);
+      lastLive = Date.now();
       renderAll(false);
       var now = new Date();
       setLive('방금 최신 자료로 바꿨어요 (' + now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0') + ')');
@@ -612,6 +677,98 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
     busy = false;
   }
   $('refresh').addEventListener('click', refreshLive);
+
+  /* ---------- 창(모달) ---------- */
+  function openModal(id) { $(id).hidden = false; }
+  function closeModal(id) { $(id).hidden = true; if (id === 'm-qr') stopQr(); }
+  document.querySelectorAll('[data-close]').forEach(function (b) { b.addEventListener('click', function () { closeModal(b.getAttribute('data-close')); }); });
+
+  /* ---------- 로또 QR 읽기 ---------- */
+  var qrStream = null, qrTimer = null;
+  function qrMsg(t) { $('qr-msg').textContent = t; }
+  async function startQr() {
+    $('qr-result').innerHTML = ''; $('qr-cam').hidden = false;
+    qrMsg('복권 아래쪽 QR코드를 네모 칸 안에 맞춰주세요.');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.jsQR) { $('qr-cam').hidden = true; qrMsg('이 화면에서는 카메라를 쓸 수 없어요. 휴대폰에 설치한 앱에서 사용해 주세요.'); return; }
+    try { qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false }); }
+    catch (e) { $('qr-cam').hidden = true; qrMsg('카메라를 켜지 못했어요. 휴대폰 설정 → 애플리케이션 → 긁기전에 → 권한에서 카메라를 허용한 뒤 다시 찍어주세요.'); return; }
+    var v = $('qr-video'); v.srcObject = qrStream;
+    try { await v.play(); } catch (e) {}
+    var c = document.createElement('canvas'), ctx = c.getContext('2d', { willReadFrequently: true });
+    qrTimer = setInterval(function () {
+      if (v.readyState < 2 || !v.videoWidth) return;
+      var w = 640, h = Math.round(v.videoHeight * w / v.videoWidth);
+      c.width = w; c.height = h; ctx.drawImage(v, 0, 0, w, h);
+      var code = window.jsQR(ctx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' });
+      if (code && code.data) { stopQr(); $('qr-cam').hidden = true; handleQr(code.data); }
+    }, 250);
+  }
+  function stopQr() {
+    if (qrTimer) clearInterval(qrTimer); qrTimer = null;
+    if (qrStream) { qrStream.getTracks().forEach(function (t) { t.stop(); }); qrStream = null; }
+  }
+  function parseQr(text) {
+    var m = /[?&]v=(\d{4})((?:[a-zA-Z]\d{12})+)/.exec(text);
+    if (!m) return null;
+    var games = [], re = /([a-zA-Z])(\d{12})/g, g;
+    while ((g = re.exec(m[2])) && games.length < 5) {
+      var nums = [];
+      for (var i = 0; i < 12; i += 2) nums.push(+g[2].substr(i, 2));
+      if (nums.some(function (n) { return n < 1 || n > 45; })) return null;
+      games.push(nums.sort(function (a, b) { return a - b; }));
+    }
+    return games.length ? { ep: +m[1], games: games } : null;
+  }
+  async function roundInfo(ep) {
+    var L = D.lotto.latest;
+    if (ep === L.ep) return L;
+    if (ep > L.ep || !isNative) return null;
+    var rows = (await getJ('/lt645/selectPstLt645InfoNew.do?srchDir=center&srchLtEpsd=' + ep)).data.list;
+    var r = rows.filter(function (x) { return x.ltEpsd === ep; })[0];
+    if (!r) return null;
+    return { ep: ep, nums: [r.tm1WnNo, r.tm2WnNo, r.tm3WnNo, r.tm4WnNo, r.tm5WnNo, r.tm6WnNo], bonus: r.bnsWnNo,
+      ranks: [1, 2, 3, 4, 5].map(function (k) { return { n: r['rnk' + k + 'WnNope'], amt: r['rnk' + k + 'WnAmt'] }; }) };
+  }
+  async function handleQr(text) {
+    var official = /^https?:\/\/[\w.]*dhlottery\.co\.kr\//.test(text) ? '<a class="maplink" href="' + esc(text) + '" target="_blank" rel="noopener">동행복권 공식 화면에서도 확인하기</a>' : '';
+    var t = parseQr(text);
+    if (!t) { qrMsg('이 QR코드에서는 로또 번호를 읽지 못했어요.'); $('qr-result').innerHTML = official; return; }
+    qrMsg(t.ep + '회 복권이에요. 결과를 확인하는 중…');
+    var R = null;
+    try { R = await roundInfo(t.ep); } catch (e) { R = null; }
+    var head;
+    if (R) head = t.ep + '회 당첨번호와 맞춰봤어요.';
+    else if (t.ep > D.lotto.latest.ep) head = t.ep + '회는 아직 추첨 전이에요. 토요일 추첨이 끝나면 다시 찍어주세요.';
+    else head = t.ep + '회 당첨번호를 가져오지 못했어요.';
+    qrMsg(head);
+    var best = 0;
+    $('qr-result').innerHTML = t.games.map(function (nums, i) {
+      var r = R ? rankOf(nums, R) : null;
+      if (r && r.r && (!best || r.r < best)) best = r.r;
+      var tag = !R ? '' : r.r ? '<span class="pill" style="background:var(--hit-bg);color:var(--hit-ink)">' + RANK_LABEL[r.r - 1] + '</span>' : '<span class="pill">' + r.hit + '개</span>';
+      return '<div class="qrgame"><span class="lbl" style="width:18px;font-weight:700;color:var(--muted)">' + 'ABCDE'.charAt(i) + '</span><div class="balls" style="flex:1;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px">' +
+        nums.map(function (n) { return '<span class="ball ' + ballCls(n) + (R && R.nums.indexOf(n) < 0 ? ' dim' : '') + '" style="width:100%;height:auto;aspect-ratio:1;max-width:34px;font-size:13px">' + n + '</span>'; }).join('') +
+        '</div>' + tag + '</div>';
+    }).join('') + (R ? '<div class="result ' + (best ? 'win' : '') + '" style="margin-top:8px">' + (best ? '축하해요! 가장 높은 등수는 ' + RANK_LABEL[best - 1] + '이에요. (' + won(R.ranks[best - 1].amt) + ')' : '아쉽게도 모두 낙첨이에요.') + '</div>' : '') + official;
+  }
+  $('qr-open').addEventListener('click', function () { openModal('m-qr'); startQr(); });
+  $('qr-again').addEventListener('click', function () { stopQr(); startQr(); });
+
+  /* ---------- 뒤로가기·종료 확인·다시 열 때 새로 받기 (안드로이드 앱) ---------- */
+  var lastLive = 0;
+  var AppPlugin = null;
+  try { if (isNative) AppPlugin = (window.Capacitor.Plugins && window.Capacitor.Plugins.App) || (window.Capacitor.registerPlugin ? window.Capacitor.registerPlugin('App') : null); } catch (e) { AppPlugin = null; }
+  $('exit-yes').addEventListener('click', function () { if (AppPlugin) AppPlugin.exitApp(); else closeModal('m-exit'); });
+  if (AppPlugin) {
+    AppPlugin.addListener('backButton', function () {
+      if (!$('m-qr').hidden) { closeModal('m-qr'); return; }
+      if (!$('m-exit').hidden) { closeModal('m-exit'); return; }
+      var h = (location.hash || '#speetto').slice(1);
+      if (h !== 'speetto') { location.hash = h.indexOf('sp-') === 0 ? 'speetto' : 'speetto'; return; }
+      openModal('m-exit');
+    });
+    AppPlugin.addListener('resume', function () { if (Date.now() - lastLive > 10 * 60 * 1000) refreshLive(); });
+  }
 
   fetch('data.json', { cache: 'no-store' })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
