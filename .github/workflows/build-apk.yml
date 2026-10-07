@@ -41,8 +41,26 @@ jobs:
           for f in $(find $RES -name splash.png); do cp splash.png $f; done
           npx cap sync android
 
-      - name: 서명 열쇠 준비
-        run: mkdir -p ~/.android && cp debug.keystore ~/.android/debug.keystore
+      - name: 서명 열쇠 준비 (매번 같은 도장 찍기)
+        run: |
+          cat >> android/app/build.gradle <<'EOF'
+
+          android {
+              signingConfigs {
+                  fixed {
+                      storeFile file("../../debug.keystore")
+                      storePassword "android"
+                      keyAlias "androiddebugkey"
+                      keyPassword "android"
+                  }
+              }
+              buildTypes {
+                  debug {
+                      signingConfig signingConfigs.fixed
+                  }
+              }
+          }
+          EOF
 
       - name: APK 만들기
         run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
@@ -52,6 +70,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp android/app/build/outputs/apk/debug/app-debug.apk geulgi-1.${{ github.run_number }}.apk
+          keytool -printcert -jarfile geulgi-1.${{ github.run_number }}.apk | grep -q "5E:44:2C:B3"
           gh release create "v${{ github.run_number }}" geulgi-1.${{ github.run_number }}.apk \
             --title "긁기전에 버전 1.${{ github.run_number }}" \
             --notes "폰에서 아래 geulgi-1.${{ github.run_number }}.apk를 눌러 받은 뒤 설치하세요. 설치 후 앱 맨 위 '긁기전에' 옆에 버전 1.${{ github.run_number }}이 보이면 성공이에요."
