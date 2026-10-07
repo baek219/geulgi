@@ -190,6 +190,28 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
 .cam .meter { position: absolute; left: 12%; right: 12%; top: 10px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.3); overflow: hidden; }
 .cam .meter i { display: block; height: 100%; width: 0; background: #E5484D; transition: width .25s, background .25s; }
 .btns3 { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 8px; }
+.tk { border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.tk + .tk { margin-top: 10px; }
+.tk.win { border-color: var(--hit-ink); background: var(--hit-bg); }
+.tk-head { display: flex; align-items: center; gap: 8px; }
+.tk-head .ep { font-size: 16px; }
+.tk-head .when { font-size: 12px; color: var(--muted); }
+.tk-head .del { margin-left: auto; min-height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); font-size: 13px; color: var(--muted); }
+.tk-head .del.confirm { background: #C7362D; border-color: #C7362D; color: #fff; font-weight: 700; }
+.tk-status { font-size: 15px; font-weight: 700; }
+.tk.win .tk-status { color: var(--hit-ink); }
+.tk-game { display: flex; align-items: center; gap: 8px; }
+.tk-game .lbl { width: 16px; font-size: 13px; font-weight: 700; color: var(--muted); flex: none; }
+.tk-game .balls { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+.tk-game .ball { width: 100%; height: auto; max-width: 30px; aspect-ratio: 1; font-size: 12px; }
+.tk-game .pill { font-size: 11px; }
+.sumbox { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sel { height: 44px; width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 0 10px; background: var(--card); color: var(--ink); font-size: 15px; }
+.seg-light { background: var(--card); }
+.dist { font-size: 13px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+.sells { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
+.sells span { font-size: 11px; padding: 1px 6px; border-radius: 8px; background: var(--sunk); color: var(--muted); font-weight: 600; }
+.sells span.lt { background: #E7EEFB; color: #1D4ED8; } .sells span.sp { background: var(--hit-bg); color: var(--hit-ink); }
 .raw { font-size: 11px; color: var(--muted); word-break: break-all; background: var(--sunk); padding: 8px; border-radius: 8px; }
 .qrgame { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .qrgame:last-child { border-bottom: 0; }
@@ -251,6 +273,11 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
         <div class="result" id="my-result" hidden></div>
         <div class="btns"><button class="btn" type="button" id="my-clear">다시 고르기</button><button class="btn dark" type="button" id="qr-open"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3"/><path d="M16 4h3a1 1 0 0 1 1 1v3"/><path d="M20 16v3a1 1 0 0 1-1 1h-3"/><path d="M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M9 9h6v6H9z"/></svg>QR로 확인</button></div>
       </div>
+      <div class="card" id="tk-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2>내 복권함</h2><span class="small" id="tk-count"></span></div>
+        <div id="tk-sum"></div>
+        <div id="tk-list"></div>
+      </div>
       <div class="card"><h2>등수별 당첨금</h2><div class="rows" id="lt-ranks"></div></div>
       <div class="card"><h2 id="lt-shops-h">1등 나온 곳</h2><div id="lt-shops"></div></div>
       <p class="note">당첨번호는 매주 토요일 추첨 후에 바뀌어요.</p>
@@ -283,13 +310,30 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
   <!-- ④ 판매점 -->
   <section id="v-stores" hidden>
     <header class="band">
-      <div class="sub">동행복권 발표 기준</div>
-      <h1>1등 나온 판매점</h1>
-      <div class="seg" role="tablist" aria-label="복권 종류" id="st-tabs"></div>
+      <div class="sub">동행복권 공개 정보</div>
+      <h1>판매점</h1>
+      <div class="seg" role="tablist" aria-label="보기" id="st-mode"></div>
     </header>
     <div class="wrap">
-      <div class="card"><h2 id="st-h"></h2><div id="st-list"></div></div>
-      <p class="note">1등 배출 횟수는 지난 기록일 뿐, 앞으로의 당첨과는 관계없어요. '지도'를 누르면 네이버 지도에서 위치를 찾아봐요.</p>
+      <div id="near-wrap" style="display:flex;flex-direction:column;gap:12px">
+        <div class="card">
+          <h2>내 주변 판매점 찾기</h2>
+          <div class="btns"><button class="btn primary" type="button" id="near-gps">내 위치로 찾기</button><button class="btn" type="button" id="near-pick">지역 직접 고르기</button></div>
+          <div id="near-region" hidden style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+            <label class="small" style="display:flex;flex-direction:column;gap:4px">시/도<select class="sel" id="near-ctpv"></select></label>
+            <label class="small" style="display:flex;flex-direction:column;gap:4px">시/군/구<select class="sel" id="near-sgg"></select></label>
+          </div>
+          <div class="chips" role="group" aria-label="파는 복권" id="near-filter"></div>
+          <p class="small" id="near-msg" style="margin:0;line-height:1.55"></p>
+        </div>
+        <div class="card" id="near-card" hidden><h2 id="near-h"></h2><div id="near-list"></div></div>
+      </div>
+      <div id="top-wrap" style="display:flex;flex-direction:column;gap:12px">
+        <div class="seg seg-light" role="tablist" aria-label="복권 종류" id="st-tabs"></div>
+        <div class="card"><h2 id="st-h"></h2><div id="st-list"></div></div>
+        <p class="note">1등 배출 횟수는 지난 기록일 뿐, 앞으로의 당첨과는 관계없어요.</p>
+      </div>
+      <p class="note">'지도'를 누르면 네이버 지도에서 위치를 보여줘요.</p>
     </div>
   </section>
 
@@ -318,7 +362,7 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
     <a href="#speetto" data-tab="speetto"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 12h4"/><path d="M15 10l2 2-2 2"/></svg>스피또</a>
     <a href="#lotto" data-tab="lotto"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="9" r="4"/><circle cx="16" cy="9" r="4"/><circle cx="12" cy="16" r="4"/></svg>로또</a>
     <a href="#pick" data-tab="pick"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><circle cx="9" cy="15" r="1.2" fill="currentColor"/></svg>번호 뽑기</a>
-    <a href="#stores" data-tab="stores"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>1등 판매점</a>
+    <a href="#stores" data-tab="stores"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>판매점</a>
   </div>
 </nav>
 
@@ -327,6 +371,7 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
 <script>
 (function () {
   var D = null;
+  var isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   var APP_VERSION = '__APP_VERSION__';
   var VER_TEXT = APP_VERSION.indexOf('__') === 0 ? '웹 미리보기' : '버전 ' + APP_VERSION;
   var NAMES = { SP2000: '스피또 2000', SP1000: '스피또 1000', SP500: '스피또 500' };
@@ -434,6 +479,7 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
     };
     draw();
     renderPicker();
+    renderTickets();
   }
   /* 내 번호: 1~45 눌러서 고르기 */
   var myNums = [];
@@ -470,6 +516,85 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
     myNums.splice(myNums.indexOf(+b.getAttribute('data-rm')), 1); renderPicker();
   });
   $('my-clear').addEventListener('click', function () { myNums = []; renderPicker(); });
+
+  /* ---------- 내 복권함 (QR로 읽은 복권 모음) ---------- */
+  var tickets = store.get('tickets', []);
+  var roundCache = store.get('roundCache', {});
+  var fetching = {};
+  var delArm = null;
+  function roundFor(ep) {
+    if (D && ep === D.lotto.latest.ep) return D.lotto.latest;
+    return roundCache[ep] || null;
+  }
+  function ticketResult(t) {
+    var R = roundFor(t.ep);
+    if (!R) return null;
+    var best = 0, total = 0, per = t.games.map(function (nums) {
+      var r = rankOf(nums, R);
+      if (r.r) { total += R.ranks[r.r - 1].amt; if (!best || r.r < best) best = r.r; }
+      return r;
+    });
+    return { R: R, per: per, best: best, total: total };
+  }
+  function saveTicket(text, parsed) {
+    var key = parsed.ep + ':' + parsed.games.map(function (g) { return g.join('-'); }).join('|');
+    if (tickets.some(function (t) { return t.key === key; })) return false;
+    tickets.unshift({ key: key, ep: parsed.ep, games: parsed.games, at: new Date().toISOString(), url: text });
+    tickets = tickets.slice(0, 200);
+    store.set('tickets', tickets);
+    return true;
+  }
+  function needFetch() {
+    if (!isNative || !D) return;
+    tickets.forEach(function (t) {
+      if (t.ep < D.lotto.latest.ep && !roundCache[t.ep] && !fetching[t.ep]) {
+        fetching[t.ep] = true;
+        roundInfo(t.ep).then(function (R) {
+          if (R) { roundCache[t.ep] = R; store.set('roundCache', roundCache); renderTickets(); }
+        }).catch(function () {}).then(function () { delete fetching[t.ep]; });
+      }
+    });
+  }
+  function renderTickets() {
+    if (!D) return;
+    $('tk-count').textContent = tickets.length ? tickets.length + '장' : '';
+    if (!tickets.length) {
+      $('tk-sum').innerHTML = '';
+      $('tk-list').innerHTML = '<div class="empty">아래 ‘QR로 확인’으로 복권을 찍으면 여기에 자동으로 모여요. 회차별 당첨 여부와 당첨금을 한눈에 볼 수 있어요.</div>';
+      return;
+    }
+    var won_ = 0, wins = 0, waiting = 0;
+    var html = tickets.map(function (t, i) {
+      var res = ticketResult(t), d = new Date(t.at);
+      var status, cls = '';
+      if (t.ep > D.lotto.latest.ep) { status = '추첨 전이에요 (' + t.ep + '회)'; waiting++; }
+      else if (!res) status = isNative ? '당첨번호를 가져오는 중…' : '당첨번호를 아직 못 가져왔어요';
+      else if (res.best) { status = RANK_LABEL[res.best - 1] + ' 당첨 · ' + won(res.total); cls = 'win'; won_ += res.total; wins++; }
+      else status = '낙첨';
+      var games = t.games.map(function (nums, gi) {
+        var r = res ? res.per[gi] : null;
+        var tag = r ? (r.r ? '<span class="pill" style="background:var(--hit-bg);color:var(--hit-ink)">' + RANK_LABEL[r.r - 1] + '</span>' : '<span class="pill">' + r.hit + '개</span>') : '';
+        return '<div class="tk-game"><span class="lbl">' + 'ABCDE'.charAt(gi) + '</span><div class="balls">' +
+          nums.map(function (n) { return '<span class="ball ' + ballCls(n) + (res && res.R.nums.indexOf(n) < 0 ? ' dim' : '') + '">' + n + '</span>'; }).join('') + '</div>' + tag + '</div>';
+      }).join('');
+      var armed = delArm === t.key;
+      return '<div class="tk ' + cls + '"><div class="tk-head"><span class="ep">' + t.ep + '회</span><span class="when">' + (d.getMonth() + 1) + '.' + d.getDate() + ' 저장</span>' +
+        '<button type="button" class="del ' + (armed ? 'confirm' : '') + '" data-tk="' + esc(t.key) + '">' + (armed ? '정말 삭제' : '삭제') + '</button></div>' +
+        '<div class="tk-status">' + status + '</div>' + games + '</div>';
+    }).join('');
+    $('tk-sum').innerHTML = '<div class="sumbox"><div class="cell"><div class="k">당첨된 복권</div><div class="v">' + wins + '<small>장</small></div></div>' +
+      '<div class="cell ' + (won_ ? 'hit' : '') + '"><div class="k">당첨금 합계</div><div class="v">' + (won_ ? won(won_) : '0원') + '</div></div>' +
+      '<div class="cell"><div class="k">추첨 기다림</div><div class="v">' + waiting + '<small>장</small></div></div></div>';
+    $('tk-list').innerHTML = html;
+    needFetch();
+  }
+  $('tk-list').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-tk]'); if (!b) return;
+    var key = b.getAttribute('data-tk');
+    if (delArm !== key) { delArm = key; renderTickets(); setTimeout(function () { if (delArm === key) { delArm = null; renderTickets(); } }, 4000); return; }
+    tickets = tickets.filter(function (t) { return t.key !== key; });
+    store.set('tickets', tickets); delArm = null; renderTickets();
+  });
 
   /* ---------- 번호 뽑기 ---------- */
   var pkMode = store.get('pkMode', 'random');
@@ -571,6 +696,168 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
     stTab = b.getAttribute('data-t'); store.set('stTab', stTab); renderStores();
   });
 
+  /* ---------- 내 주변 판매점 ---------- */
+  var stMode = store.get('stMode', 'near');
+  function renderMode() {
+    var modes = [['near', '내 주변'], ['top', '1등 나온 곳']];
+    $('st-mode').innerHTML = modes.map(function (m) { return '<button type="button" role="tab" data-mode="' + m[0] + '" aria-selected="' + (stMode === m[0]) + '">' + m[1] + '</button>'; }).join('');
+    $('near-wrap').hidden = stMode !== 'near';
+    $('top-wrap').hidden = stMode !== 'top';
+  }
+  $('st-mode').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-mode]'); if (!b) return;
+    stMode = b.getAttribute('data-mode'); store.set('stMode', stMode); renderMode();
+  });
+  var CTPV = [['서울특별시', '서울', 'KR-11', /서울/], ['부산광역시', '부산', 'KR-26', /부산/], ['대구광역시', '대구', 'KR-27', /대구/], ['인천광역시', '인천', 'KR-28', /인천/],
+    ['전남광주통합특별시', '전남광주', 'KR-29|KR-46', /전남광주|광주광역시|전라남도|^광주$/], ['대전광역시', '대전', 'KR-30', /대전/], ['울산광역시', '울산', 'KR-31', /울산/], ['세종특별자치시', '세종', 'KR-50', /세종/],
+    ['경기도', '경기', 'KR-41', /경기/], ['강원도', '강원', 'KR-42|KR-51', /강원/], ['충청북도', '충북', 'KR-43', /충청북|충북/], ['충청남도', '충남', 'KR-44', /충청남|충남/],
+    ['전라북도', '전북', 'KR-45|KR-52', /전라북|전북/], ['경상북도', '경북', 'KR-47', /경상북|경북/], ['경상남도', '경남', 'KR-48', /경상남|경남/], ['제주특별자치도', '제주', 'KR-49', /제주/]];
+  var nearFilter = store.get('nearFilter', 'all');
+  var nearShops = [], nearPos = null, nearTitle = '', showN = 30;
+  var sggCache = {};
+  function nmsg(t) { $('near-msg').textContent = t; }
+  function renderNearFilter() {
+    var f = [['all', '전체'], ['lotto', '로또'], ['speetto', '스피또']];
+    $('near-filter').innerHTML = f.map(function (x) { return '<button type="button" class="chip" data-nf="' + x[0] + '" aria-pressed="' + (nearFilter === x[0]) + '">' + x[1] + '</button>'; }).join('');
+  }
+  function sellsLotto(s) { return s.l645LtNtslYn === 'Y'; }
+  function sellsSp(s) { return s.st5LtNtslYn === 'Y' || s.st10LtNtslYn === 'Y' || s.st20LtNtslYn === 'Y'; }
+  function km(a, b, c, d) {
+    var R = 6371, toR = Math.PI / 180, dLa = (c - a) * toR, dLo = (d - b) * toR;
+    var x = Math.sin(dLa / 2) * Math.sin(dLa / 2) + Math.cos(a * toR) * Math.cos(c * toR) * Math.sin(dLo / 2) * Math.sin(dLo / 2);
+    return 2 * R * Math.asin(Math.sqrt(x));
+  }
+  function fmtDist(k) { return k < 1 ? Math.round(k * 1000 / 10) * 10 + 'm' : (Math.round(k * 10) / 10) + 'km'; }
+  function renderNear() {
+    var list = nearShops.filter(function (s) { return nearFilter === 'all' || (nearFilter === 'lotto' ? sellsLotto(s) : sellsSp(s)); });
+    $('near-card').hidden = !nearTitle;
+    $('near-h').textContent = nearTitle + ' (' + list.length + '곳)';
+    if (!list.length) { $('near-list').innerHTML = '<div class="empty">조건에 맞는 판매점이 없어요.</div>'; return; }
+    $('near-list').innerHTML = list.slice(0, showN).map(function (s) {
+      var sp = [s.st20LtNtslYn === 'Y' ? '2000' : '', s.st10LtNtslYn === 'Y' ? '1000' : '', s.st5LtNtslYn === 'Y' ? '500' : ''].filter(Boolean);
+      var addr = (s.bplcRdnmDaddr || ((s.tm1BplcLctnAddr || '') + ' ' + (s.tm2BplcLctnAddr || '') + ' ' + (s.tm3BplcLctnAddr || '') + ' ' + (s.bplcLctnDaddr || ''))).replace(/\s+/g, ' ').trim();
+      var dist = s._d != null ? '<span class="dist">' + fmtDist(s._d) + '</span>' : '';
+      var map = 'https://map.naver.com/p/search/' + encodeURIComponent(addr + ' ' + (s.conmNm || ''));
+      return '<div class="shop"><div class="body"><span class="nm">' + esc(s.conmNm) + '</span><span class="ad">' + esc(addr) + '</span>' +
+        '<div class="sells">' + (sellsLotto(s) ? '<span class="lt">로또</span>' : '') + (sp.length ? '<span class="sp">스피또 ' + sp.join('·') + '</span>' : '') + '</div>' +
+        (s.shpTelno ? '<span class="ad">' + esc(s.shpTelno) + '</span>' : '') + '</div>' +
+        '<div class="side">' + dist + '<a class="maplink" href="' + map + '" target="_blank" rel="noopener">지도</a></div></div>';
+    }).join('') + (list.length > showN ? '<button type="button" class="more" id="near-more">더 보기 (' + (list.length - showN) + '곳 더)</button>' : '');
+    var m = $('near-more'); if (m) m.onclick = function () { showN += 30; renderNear(); };
+  }
+  $('near-filter').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-nf]'); if (!b) return;
+    nearFilter = b.getAttribute('data-nf'); store.set('nearFilter', nearFilter); renderNearFilter(); showN = 30; renderNear();
+  });
+  async function loadSgg(full) {
+    if (sggCache[full]) return sggCache[full];
+    var list = ((await getJ('/prchsplcsrch/selectAdmdst.do?srchCtpvNm=' + encodeURIComponent(full))).data.list || []).filter(Boolean).map(function (x) { return x.sggNm; }).filter(Boolean);
+    sggCache[full] = list; return list;
+  }
+  async function loadShops(shortName, sgg) {
+    var base = { l645LtNtslYn: 'N', l520LtNtslYn: 'N', st5LtNtslYn: 'N', st10LtNtslYn: 'N', st20LtNtslYn: 'N', cpexUsePsbltyYn: 'N', recordCountPerPage: 10, pageCount: 5, srchCtpvNm: shortName, srchSggNm: sgg };
+    var q = function (pg) { var o = Object.assign({}, base, { pageNum: pg }); return '/prchsplcsrch/selectLtShp.do?' + Object.keys(o).map(function (k) { return k + '=' + encodeURIComponent(o[k]); }).join('&'); };
+    var first = (await getJ(q(1))).data, all = (first.list || []).slice(), pages = Math.min(40, Math.ceil((first.total || 0) / 10));
+    for (var pg = 2; pg <= pages; pg++) all = all.concat((await getJ(q(pg))).data.list || []);
+    return all;
+  }
+  async function searchRegions(c, sggs, title) {
+    nearTitle = ''; renderNear();
+    nmsg(title + ' 판매점을 찾는 중이에요…');
+    var all = [];
+    for (var i = 0; i < sggs.length; i++) all = all.concat(await loadShops(c[1], sggs[i]));
+    var seen = {};
+    nearShops = all.filter(function (s) { if (seen[s.ltShpId]) return false; seen[s.ltShpId] = 1; return s.slrOperSttsCd !== '0'; });
+    nearShops.forEach(function (s) { s._d = nearPos && s.shpLat ? km(nearPos.lat, nearPos.lng, s.shpLat, s.shpLot) : null; });
+    if (nearPos) nearShops.sort(function (a, b) { return (a._d == null ? 1e9 : a._d) - (b._d == null ? 1e9 : b._d); });
+    else nearShops.sort(function (a, b) { return (a.conmNm || '').localeCompare(b.conmNm || '', 'ko'); });
+    nearTitle = nearPos ? '가까운 순' : title;
+    showN = 30;
+    nmsg(nearPos ? title + ' 판매점을 내 위치에서 가까운 순으로 보여줘요.' : title + ' 판매점이에요. 위치를 쓰면 가까운 순으로 볼 수 있어요.');
+    renderNear();
+  }
+  function getPos() {
+    return new Promise(function (ok, no) {
+      if (!navigator.geolocation) return no(new Error('위치 기능 없음'));
+      navigator.geolocation.getCurrentPosition(function (p) { ok({ lat: p.coords.latitude, lng: p.coords.longitude }); }, no, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+    });
+  }
+  async function reverse(pos) {
+    var r = await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&accept-language=ko&lat=' + pos.lat + '&lon=' + pos.lng, { headers: { 'Accept': 'application/json' } });
+    if (!r.ok) throw new Error('주소 찾기 실패');
+    return (await r.json()).address || {};
+  }
+  function pickRegion(addr, sggList) {
+    var tokens = [addr.city, addr.borough, addr.city_district, addr.county, addr.town].filter(function (t) { return t && /(시|군|구)$/.test(t) && !/특별|광역/.test(t); });
+    var byAll = sggList.filter(function (g) { return tokens.length && tokens.every(function (t) { return g.indexOf(t) >= 0; }); });
+    if (byAll.length) return byAll;
+    var byAny = sggList.filter(function (g) { return tokens.some(function (t) { return g.indexOf(t) >= 0; }); });
+    if (byAny.length && byAny.length <= 6) return byAny;
+    if (!sggList.length) return [''];
+    if (sggList.length <= 2) return sggList;
+    return [];
+  }
+  function ctpvOf(addr) {
+    var iso = addr['ISO3166-2-lvl4'] || '';
+    var hit = CTPV.filter(function (c) { return iso && c[2].split('|').indexOf(iso) >= 0; })[0];
+    if (hit) return hit;
+    var text = addr.state || addr.province || addr.city || '';
+    return CTPV.filter(function (c) { return c[3].test(text); })[0] || null;
+  }
+  $('near-gps').addEventListener('click', async function () {
+    if (!isNative) { nmsg('내 주변 찾기는 휴대폰에 설치한 앱에서만 쓸 수 있어요.'); return; }
+    nmsg('내 위치를 확인하는 중이에요…');
+    try { nearPos = await getPos(); }
+    catch (e) { nearPos = null; nmsg('위치를 확인하지 못했어요. 휴대폰 설정 → 애플리케이션 → 긁기전에 → 권한에서 위치를 허용하거나, 지역을 직접 골라주세요.'); openRegion(); return; }
+    try {
+      nmsg('내가 있는 동네를 찾는 중이에요…');
+      var addr = await reverse(nearPos), c = ctpvOf(addr);
+      if (!c) throw new Error('시/도 모름');
+      var sggs = pickRegion(addr, await loadSgg(c[0]));
+      if (!sggs.length) throw new Error('시/군/구 모름');
+      store.set('nearRegion', { ctpv: c[0], sgg: sggs[0] });
+      await searchRegions(c, sggs, (c[1] + ' ' + sggs.join(', ')).trim());
+    } catch (e) {
+      nmsg('지금 있는 지역을 알아내지 못했어요. 지역을 직접 골라주시면 내 위치에서 가까운 순으로 보여드릴게요.');
+      openRegion();
+    }
+  });
+  async function openRegion() {
+    $('near-region').hidden = false;
+    var saved = store.get('nearRegion', null);
+    $('near-ctpv').innerHTML = '<option value="">시/도 선택</option>' + CTPV.map(function (c) { return '<option value="' + c[0] + '"' + (saved && saved.ctpv === c[0] ? ' selected' : '') + '>' + c[0] + '</option>'; }).join('');
+    if (saved && saved.ctpv) await fillSgg(saved.ctpv, saved.sgg); else $('near-sgg').innerHTML = '<option value="">먼저 시/도 선택</option>';
+  }
+  async function fillSgg(full, sel) {
+    if (!isNative) { $('near-sgg').innerHTML = '<option value="">앱에서만 가능</option>'; return; }
+    $('near-sgg').innerHTML = '<option value="">불러오는 중…</option>';
+    try {
+      var list = await loadSgg(full);
+      if (!list.length) {
+        $('near-sgg').innerHTML = '<option value="__all">전체</option>';
+        var c0 = CTPV.filter(function (x) { return x[0] === full; })[0];
+        store.set('nearRegion', { ctpv: full, sgg: '' });
+        searchRegions(c0, [''], c0[1]).catch(function () { nmsg('판매점을 불러오지 못했어요.'); });
+        return;
+      }
+      $('near-sgg').innerHTML = '<option value="">시/군/구 선택</option>' + list.map(function (g) { return '<option' + (sel === g ? ' selected' : '') + '>' + esc(g) + '</option>'; }).join('');
+    } catch (e) { $('near-sgg').innerHTML = '<option value="">불러오지 못했어요</option>'; }
+  }
+  $('near-pick').addEventListener('click', function () {
+    if ($('near-region').hidden) openRegion(); else $('near-region').hidden = true;
+    if (!isNative) nmsg('내 주변 찾기는 휴대폰에 설치한 앱에서만 쓸 수 있어요.');
+  });
+  $('near-ctpv').addEventListener('change', function () { if (this.value) fillSgg(this.value); });
+  $('near-sgg').addEventListener('change', async function () {
+    var full = $('near-ctpv').value, sgg = this.value; if (!full || !sgg) return;
+    var c = CTPV.filter(function (x) { return x[0] === full; })[0];
+    store.set('nearRegion', { ctpv: full, sgg: sgg });
+    try { await searchRegions(c, [sgg], c[1] + ' ' + sgg); } catch (e) { nmsg('판매점을 불러오지 못했어요. 인터넷 연결을 확인하고 다시 골라주세요.'); }
+  });
+  renderMode(); renderNearFilter();
+  if (!isNative) nmsg('휴대폰에 설치한 앱에서 ‘내 위치로 찾기’를 누르면 가까운 로또·스피또 판매점을 보여줘요.');
+  else nmsg('‘내 위치로 찾기’를 누르면 가까운 로또·스피또 판매점을 거리순으로 보여줘요.');
+
   /* ---------- 화면 전환 ---------- */
   var VIEWS = ['speetto', 'detail', 'lotto', 'pick', 'stores'];
   function route() {
@@ -601,7 +888,6 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
   }
 
   /* ---------- 폰에서 동행복권 자료 직접 받기 (안드로이드 앱에서만) ---------- */
-  var isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   var BASE = 'https://www.dhlottery.co.kr';
   var busy = false;
   function getJ(path) {
@@ -808,14 +1094,18 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
     var official = /^https?:\/\/[\w.]*dhlottery\.co\.kr\//.test(text) ? '<a class="maplink" href="' + esc(text) + '" target="_blank" rel="noopener">동행복권 공식 화면에서도 확인하기</a>' : '';
     var t = parseQr(text);
     if (!t) { qrMsg('QR은 읽었지만 로또 번호 형식이 아니에요. 아래 글자를 캡처해서 알려주시면 고칠게요.'); $('qr-result').innerHTML = '<div class="raw">' + esc(text) + '</div>' + official; return; }
+    var isNew = saveTicket(text, t);
+    renderTickets();
     qrMsg(t.ep + '회 복권이에요. 결과를 확인하는 중…');
     var R = null;
     try { R = await roundInfo(t.ep); } catch (e) { R = null; }
     var head;
+    if (R && t.ep !== D.lotto.latest.ep) { roundCache[t.ep] = R; store.set('roundCache', roundCache); renderTickets(); }
+    var saveNote = isNew ? ' 내 복권함에 저장했어요.' : ' (이미 내 복권함에 있는 복권이에요)';
     if (R) head = t.ep + '회 당첨번호와 맞춰봤어요.';
     else if (t.ep > D.lotto.latest.ep) head = t.ep + '회는 아직 추첨 전이에요. 토요일 추첨이 끝나면 다시 찍어주세요.';
     else head = t.ep + '회 당첨번호를 가져오지 못했어요.';
-    qrMsg(head);
+    qrMsg(head + saveNote);
     var best = 0;
     $('qr-result').innerHTML = t.games.map(function (nums, i) {
       var r = R ? rankOf(nums, R) : null;
