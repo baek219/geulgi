@@ -164,6 +164,7 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
 .refresh { margin-left: auto; width: 44px; height: 44px; border-radius: 12px; border: 0; background: rgba(255,255,255,.12); color: var(--band-ink); display: grid; place-items: center; }
 .refresh.spin svg { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.ver { font-size: 12px; font-weight: 500; color: var(--band-muted); align-self: flex-end; padding-bottom: 2px; }
 .live { font-size: 12px; color: var(--band-muted); }
 .slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
 .slot { aspect-ratio: 1; max-height: 52px; width: 100%; border-radius: 50%; border: 2px dashed var(--line); background: var(--sunk); color: var(--muted); font-weight: 700; font-size: 16px; display: grid; place-items: center; padding: 0; }
@@ -200,7 +201,7 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
   <!-- ① 스피또 -->
   <section id="v-speetto" hidden>
     <header class="band">
-      <div class="brand"><span class="logo" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 12h4"/><path d="M15 10l2 2-2 2"/></svg></span>긁기전에<button type="button" id="refresh" class="refresh" hidden aria-label="최신 자료 다시 받기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div>
+      <div class="brand"><span class="logo" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 12h4"/><path d="M15 10l2 2-2 2"/></svg></span>긁기전에<span class="ver" id="ver"></span><button type="button" id="refresh" class="refresh" hidden aria-label="최신 자료 다시 받기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div>
       <div class="sub" id="sp-asof"></div>
       <div class="live" id="live" hidden></div>
       <h1>지금 판매 중인 스피또<br>남은 당첨 매수</h1>
@@ -321,6 +322,8 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
 <script>
 (function () {
   var D = null;
+  var APP_VERSION = '__APP_VERSION__';
+  var VER_TEXT = APP_VERSION.indexOf('__') === 0 ? '웹 미리보기' : '버전 ' + APP_VERSION;
   var NAMES = { SP2000: '스피또 2000', SP1000: '스피또 1000', SP500: '스피또 500' };
   var RANK_LABEL = ['1등', '2등', '3등', '4등', '5등'];
   var $ = function (id) { return document.getElementById(id); };
@@ -580,12 +583,13 @@ nav.tabs a[aria-current="page"] svg { color: var(--accent); }
   function renderAll(first) {
     var u = new Date(D.updatedAt);
     $('foot').hidden = false;
-    $('foot').textContent = '자료: ' + D.source + ' · ' + u.getFullYear() + '.' + (u.getMonth() + 1) + '.' + u.getDate() + ' ' + u.getHours() + ':' + String(u.getMinutes()).padStart(2, '0') + ' 업데이트 · 동행복권 공식 앱이 아닙니다';
+    $('foot').textContent = '자료: ' + D.source + ' · ' + u.getFullYear() + '.' + (u.getMonth() + 1) + '.' + u.getDate() + ' ' + u.getHours() + ':' + String(u.getMinutes()).padStart(2, '0') + ' 업데이트 · ' + VER_TEXT + ' · 동행복권 공식 앱이 아닙니다';
     renderSpeetto(); renderLotto(); if (first) makeLines(); renderPick(); renderStores(); route();
   }
   function start(data) {
     var cached = store.get('liveData', null);
     D = cached && new Date(cached.updatedAt) > new Date(data.updatedAt) ? cached : data;
+    $('ver').textContent = VER_TEXT;
     $('loading').hidden = true;
     renderAll(true);
     if (isNative) { $('refresh').hidden = false; refreshLive(); }
